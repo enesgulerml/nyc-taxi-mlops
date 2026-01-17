@@ -1,0 +1,27 @@
+# --- PYTHON & VENV ---
+__pycache__/
+*.pyc
+venv/
+.env
+
+# --- IDE SETTINGS ---
+.vscode/
+.idea/
+.DS_Store
+
+# --- DATA SCIENCE SPECIFIC ---
+data/
+!data/.gitkeep
+
+models/
+!models/.gitkeep
+
+# NOTEBOOK CHECKPOINTS
+.ipynb_checkpoints/
+
+# --- LOGS ---
+logs/
+*.log
+
+# --- SYSTEM ---
+__MACOSX
