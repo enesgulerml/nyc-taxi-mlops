@@ -1,0 +1,13 @@
+version: '3.8'
+
+services:
+  training-services:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: nyc-taxi-training:v1
+    container_name: nyc_taxi_trainer
+    volumes:
+      - ./data:/app/data
+      - ./modals:/app/modals
+      - ./logs:/app/logs
