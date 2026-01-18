@@ -6,3 +6,8 @@ onnx
 onnxmltools
 skl2onnx
 packaging
+
+# API
+fastapi
+uvicorn
+onnxruntime
