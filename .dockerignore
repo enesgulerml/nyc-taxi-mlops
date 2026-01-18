@@ -1,0 +1,23 @@
+# GIT
+.git
+.gitignore
+
+# PYTHON
+__pycache__
+*.pyc
+*.pyo
+*.pyd
+venv/
+env/
+
+# DATA & MODELS
+modals/
+logs/
+tests/
+notebooks/
+data/
+docs/
+
+# IDE
+.idea/
+.vscode/
