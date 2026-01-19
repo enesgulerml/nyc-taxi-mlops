@@ -1,13 +1,33 @@
 version: '3.8'
 
 services:
-  training-services:
-    build:
-      context: .
-      dockerfile: Dockerfile
-    image: nyc-taxi-training:v1
-    container_name: nyc_taxi_trainer
+  # API SERVICE
+  api_service:
+    build: .
+    container_name: nyc_taxi_api
+    command: uvicorn src.api.main:app --host 0.0.0.0 --port 8000
+    ports:
+      - "8000:8000"
     volumes:
-      - ./data:/app/data
       - ./modals:/app/modals
       - ./logs:/app/logs
+    networks:
+      - mlops-network
+
+  # UI SERVICE
+  ui_service:
+    build: .
+    container_name: nyc_taxi_ui
+    environment:
+      - API_URL=http://api_service:8000/predict
+    command: ["streamlit", "run", "src/frontend/ui.py", "--server.port", "8501", "--server.address", "0.0.0.0"]
+    ports:
+      - "8501:8501"
+    depends_on:
+      - api_service
+    networks:
+      - mlops-network
+
+networks:
+  mlops-network:
+    driver: bridge
