@@ -11,3 +11,7 @@ packaging
 fastapi
 uvicorn
 onnxruntime
+
+# UI
+streamlit
+requests
