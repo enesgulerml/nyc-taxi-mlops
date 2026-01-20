@@ -13,8 +13,8 @@ venv/
 data/
 !data/.gitkeep
 
-modals/
-!modals/.gitkeep
+models/
+!models/.gitkeep
 
 # NOTEBOOK CHECKPOINTS
 .ipynb_checkpoints/

@@ -11,7 +11,7 @@ venv/
 env/
 
 # DATA & MODELS
-modals/
+models/
 logs/
 tests/
 notebooks/
