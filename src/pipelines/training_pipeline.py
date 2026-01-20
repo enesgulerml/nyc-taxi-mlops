@@ -26,26 +26,23 @@ def run_training():
     try:
         logger.info("🚀 TRAINING PIPELINE INITIALIZED")
 
-        # 1. MLflow Setup
+        # 1. MLFLOW SETUP
         mlflow.set_tracking_uri(MLFLOW_TRACKING_URI)
         mlflow.set_experiment(MLFLOW_EXPERIMENT_NAME)
-        logger.info(f"📡 MLflow Tracking URI: {MLFLOW_TRACKING_URI}")
+        logger.info(f"📡 MLFLOW TRACKING URI: {MLFLOW_TRACKING_URI}")
 
-        # 2. Data Loading & Preprocessing
-        logger.info("💾 Loading and cleaning raw data...")
+        # 2. DATA LOADING & PREPROCESSING
+        logger.info("💾 LOADING AND CLEANING RAW DATA...")
         df = load_and_clean_data(DATA_RAW_PATH)
 
-        logger.info("🛠️ Applying feature engineering...")
+        logger.info("🛠️ APPLYING FEATURE ENGINEERING...")
         df_processed = create_features(df)
 
         # Velocity Filter (Domain Logic)
         df_processed['avg_speed_kph'] = (df_processed['distance_haversine'] / df_processed['trip_duration']) * 3600
         df_processed = df_processed[(df_processed['avg_speed_kph'] <= 100) & (df_processed['avg_speed_kph'] >= 0.1)]
 
-        # --- CRITICAL FIX: Target Transformation ---
-        # Convert trip_duration (seconds) to log scale to normalize distribution
         df_processed['trip_duration_log'] = np.log1p(df_processed['trip_duration'])
-        # -------------------------------------------
 
         # Prepare Features and Target
         features = [
@@ -67,14 +64,14 @@ def run_training():
         X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
 
         # Define simulation parameters
-        NUM_TRIALS = 1
+        NUM_TRIALS = 30
         best_rmse = float('inf')
         best_model = None
         best_params = {}
 
         logger.info(f"🧪 Starting Hyperparameter Tuning ({NUM_TRIALS} Trials)...")
 
-        # 3. Hyperparameter Tuning Loop
+        # 3. HYPERPARAMETER TUNING LOOP
         for i in range(1, NUM_TRIALS + 1):
 
             # Randomly sample hyperparameters
@@ -87,35 +84,35 @@ def run_training():
             }
 
             with mlflow.start_run(run_name=f"Trial_{i:02d}"):
-                # Train
+                # TRAIN
                 model = RandomForestRegressor(**params, n_jobs=-1)
                 model.fit(X_train, y_train)
 
-                # Predict & Evaluate
+                # PREDICT & EVALUATE
                 y_pred = model.predict(X_test)
                 rmse = np.sqrt(mean_squared_error(y_test, y_pred))
                 mae = mean_absolute_error(y_test, y_pred)
 
-                # Log to MLflow
+                # LOG TO MLFLOW
                 mlflow.log_params(params)
                 mlflow.log_metric("rmse", rmse)
                 mlflow.log_metric("mae", mae)
 
-                logger.info(f"Trial {i}/{NUM_TRIALS} | RMSE: {rmse:.4f} | Params: {params}")
+                logger.info(f"Trial {i}/{NUM_TRIALS} | ROOT MSE: {rmse:.4f} | Params: {params}")
 
                 # Check if this is the best model so far
                 if rmse < best_rmse:
                     best_rmse = rmse
                     best_model = model
                     best_params = params
-                    logger.info(f"🌟 New Best Model Found! (RMSE: {best_rmse:.4f})")
+                    logger.info(f"🌟 NEW BEST MODEL FOUND! (ROOT MSE: {best_rmse:.4f})")
 
                     # Tag this run as candidate
                     mlflow.set_tag("candidate", "true")
 
-        # 4. Save the Best Model (ONNX Export)
+        # 4. SAVE THE BEST MODEL (ONNX Export)
         if best_model:
-            logger.info(f"📦 Exporting the best model (RMSE: {best_rmse:.4f}) to ONNX...")
+            logger.info(f"📦 EXPORTING THE BEST MODEL (ROOT MSE: {best_rmse:.4f}) TO ONNX...")
 
             # Convert to ONNX
             initial_type = [('float_input', FloatTensorType([None, len(features)]))]
@@ -125,14 +122,14 @@ def run_training():
             with open(MODEL_SAVE_PATH, "wb") as f:
                 f.write(onnx_model.SerializeToString())
 
-            logger.info(f"✅ Best model saved successfully to: {MODEL_SAVE_PATH}")
+            logger.info(f"✅ BEST MODEL SAVED SUCCESSFULLY TO: {MODEL_SAVE_PATH}")
 
             # Log Best Model details to MLflow explicitly
             with mlflow.start_run(run_name="Best_Model_Final"):
                 mlflow.log_params(best_params)
                 mlflow.log_metric("final_best_rmse", best_rmse)
                 mlflow.sklearn.log_model(best_model, "best_random_forest_model")
-                logger.info("🏆 Best model artifacts uploaded to MLflow Registry.")
+                logger.info("🏆 BEST MODEL ARTIFACTS UPLOADED TO MLFLOW REGISTRY.")
 
         logger.info("🏁 TRAINING PIPELINE SUCCESSFULLY COMPLETED")
 

@@ -12,12 +12,14 @@ env/
 
 # DATA & MODELS
 models/
-logs/
-tests/
-notebooks/
 data/
-docs/
 
 # IDE
 .idea/
 .vscode/
+
+# OTHERS
+logs/
+tests/
+notebooks/
+docs/

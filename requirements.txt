@@ -1,29 +1,30 @@
-pandas
-numpy
-scikit-learn
-xgboost
-onnx
-onnxmltools
-skl2onnx
-packaging
+# DATA & ML
+pandas==2.3.3
+numpy==2.4.1
+scikit-learn==1.8.0
+xgboost==3.1.3
+onnx==1.20.1
+onnxmltools==1.14.0
+skl2onnx==1.19.1
+packaging==25.0
 
 # API
-fastapi
-uvicorn
-onnxruntime
+fastapi==0.128.0
+uvicorn==0.40.0
+onnxruntime==1.23.2
 
 # UI
-streamlit
-requests
+streamlit==1.53.0
+requests==2.32.5
 
 # MLFLOW
-mlflow
+mlflow==3.8.1
 
 # REDIS
-redis
+redis==7.1.0
 
-# PROMETHEUS & GRAFANA
-prometheus-fastapi-instrumentator
+# MONITORING
+prometheus-fastapi-instrumentator==7.1.0
 
-# TESTS
-aiohttp
+# TESTS & UTILS
+aiohttp==3.13.3
