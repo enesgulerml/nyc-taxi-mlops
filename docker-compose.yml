@@ -9,8 +9,12 @@ services:
     ports:
       - "8000:8000"
     volumes:
-      - ./modals:/app/modals
+      - ./models:/app/models
       - ./logs:/app/logs
+    environment:
+      - REDIS_HOST=redis_cache
+    depends_on:
+      - redis_cache
     networks:
       - mlops-network
 
@@ -25,6 +29,49 @@ services:
       - "8501:8501"
     depends_on:
       - api_service
+    networks:
+      - mlops-network
+
+  # MLFLOW SERVICE
+  mlflow_server:
+    image: ghcr.io/mlflow/mlflow:latest
+    container_name: mlflow_server
+    ports:
+      - "5000:5000"
+    command: mlflow server --backend-store-uri sqlite:///mlflow.db --default-artifact-root ./mlartifacts --host 0.0.0.0 --port 5000
+    volumes:
+      - ./mlflow_data:/mlflow
+    networks:
+      - mlops-network
+
+  # REDIS SERVICE
+  redis_cache:
+    image: redis:7.0-alpine
+    container_name: redis_cache
+    ports:
+      - "6379:6379"
+    networks:
+      - mlops-network
+
+  # PROMETHEUS SERVICE
+  prometheus:
+    image: prom/prometheus:latest
+    container_name: prometheus_server
+    volumes:
+      - ./prometheus.yml:/etc/prometheus/prometheus.yml
+    ports:
+      - "9090:9090"
+    networks:
+      - mlops-network
+
+  # GRAFANA SERVICE
+  grafana:
+    image: grafana/grafana:latest
+    container_name: grafana_server
+    ports:
+      - "3000:3000"
+    depends_on:
+      - prometheus
     networks:
       - mlops-network
 

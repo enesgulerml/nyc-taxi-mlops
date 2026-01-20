@@ -15,3 +15,15 @@ onnxruntime
 # UI
 streamlit
 requests
+
+# MLFLOW
+mlflow
+
+# REDIS
+redis
+
+# PROMETHEUS & GRAFANA
+prometheus-fastapi-instrumentator
+
+# TESTS
+aiohttp
