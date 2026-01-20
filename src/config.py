@@ -5,7 +5,7 @@ ROOT_DIR = Path(__file__).resolve().parent.parent
 
 # DATA PATHS
 DATA_RAW_PATH = os.path.join(ROOT_DIR, "data", "raw", "train.csv")
-MODEL_SAVE_PATH = os.path.join(ROOT_DIR, "modals", "nyc_taxi_model.onnx")
+MODEL_SAVE_PATH = os.path.join(ROOT_DIR, "models", "nyc_taxi_model.onnx")
 LOG_FILE_PATH = os.path.join(ROOT_DIR, "logs", "running_logs.log")
 
 # MODEL PARAMETERS
@@ -17,3 +17,7 @@ NYC_BOUNDS = {
 # TRAINING SETTINGS
 RANDOM_STATE = 42
 TEST_SIZE = 0.2
+
+# MLFLOW CONFIG
+MLFLOW_TRACKING_URI = "http://localhost:5000"
+MLFLOW_EXPERIMENT_NAME = "NYC_Taxi_V1"
