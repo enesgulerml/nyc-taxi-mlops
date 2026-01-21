@@ -5,6 +5,7 @@ import os
 import redis
 import json
 import hashlib
+from contextlib import asynccontextmanager
 from fastapi import FastAPI, HTTPException
 from src.config import MODEL_SAVE_PATH
 from src.components.feature_engineering import create_features
@@ -12,95 +13,82 @@ from src.api.schemas import TaxiInput, PredictionOutput
 from src.utils.logger import get_logger
 from prometheus_fastapi_instrumentator import Instrumentator
 
-# INITIALIZE LOGGER
+# LOGGER
 logger = get_logger("api_service")
 
-# INITIALIZE APP
-app = FastAPI(title="NYC Taxi Duration API", version="2.0")
-
-# MONITORING (PROMETHEUS)
-Instrumentator().instrument(app).expose(app)
-
-# --- REDIS CONFIGURATION ---
-# "redis_cache" comes from docker-compose service name
-REDIS_HOST = os.getenv("REDIS_HOST", "localhost")
-REDIS_PORT = 6379
-
-try:
-    # Connect with a short timeout to avoid hanging if Redis is down
-    cache = redis.Redis(host=REDIS_HOST, port=REDIS_PORT, decode_responses=True, socket_connect_timeout=1)
-    cache.ping()  # Check connection
-    logger.info(f"✅ CONNECTED TO REDIS AT {REDIS_HOST}:{REDIS_PORT}")
-    redis_available = True
-except redis.ConnectionError:
-    logger.warning("⚠️ REDIS UNREACHABLE! CACHING DISABLED.")
-    redis_available = False
-# ---------------------------
-
-# GLOBAL MODEL SESSION
-sess = None
+# GLOBAL VARIABLES
+model = None
 input_name = None
+cache = None
+redis_available = False
 
 
-@app.on_event("startup")
-def load_model():
-    """LOADS THE MODEL ONCE WHEN API STARTS"""
-    global sess, input_name
+# LIFESPAN
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    global model, input_name, cache, redis_available
+
+    # 1. REDIS
+    REDIS_HOST = os.getenv("REDIS_HOST", "localhost")
     try:
-        logger.info(f"LOADING MODEL FROM {MODEL_SAVE_PATH}")
-        sess = rt.InferenceSession(MODEL_SAVE_PATH)
-        input_name = sess.get_inputs()[0].name
-        logger.info("✅ MODEL HAS SUCCESSFULLY LOADED")
+        cache = redis.Redis(host=REDIS_HOST, port=6379, decode_responses=True, socket_connect_timeout=1)
+        cache.ping()
+        redis_available = True
+        logger.info(f"✅ REDIS CONNECTED: {REDIS_HOST}")
     except Exception as e:
-        logger.error(f"❌ MODEL FAILED TO LOAD: {e}")
+        logger.warning(f"⚠️ REDIS FAILED: {e}")
+        redis_available = False
+
+    # 2. LOAD THE MODEL
+    try:
+        model = rt.InferenceSession(MODEL_SAVE_PATH)
+        input_name = model.get_inputs()[0].name
+        logger.info(f"✅ MODEL LOADED: {MODEL_SAVE_PATH}")
+    except Exception as e:
+        logger.error(f"❌ MODEL LOAD ERROR: {e}")
         raise e
+
+    yield
+
+    # 3. CLEANUP
+    if cache: cache.close()
+    logger.info("🛑 SHUTDOWN")
+
+
+# --- APP INITIALIZATION ---
+app = FastAPI(title="NYC Taxi API", version="2.0", lifespan=lifespan)
+Instrumentator().instrument(app).expose(app)
 
 
 def generate_cache_key(data: TaxiInput) -> str:
-    """GENERATES A UNIQUE MD5 HASH FOR THE INPUT DATA"""
-    # Convert input object to a sorted JSON string to ensure consistency
-    data_str = json.dumps(data.dict(), sort_keys=True)
+    data_str = json.dumps(data.model_dump(), sort_keys=True)
     return hashlib.md5(data_str.encode()).hexdigest()
-
-
-@app.get("/health")
-def health_check():
-    """CHECKS IF THE API AND REDIS ARE ALIVE."""
-    return {
-        "status": "active",
-        "model": "loaded" if sess else "not_loaded",
-        "redis": "connected" if redis_available else "disconnected"
-    }
 
 
 @app.get("/")
 def root():
-    return {"message": "WELCOME TO NYC TAXI DURATION API (WITH REDIS CACHE)"}
+    return {"message": "NYC TAXI PREDICTION API IS LIVE"}
 
 
 @app.post("/predict", response_model=PredictionOutput)
 def predict(data: TaxiInput):
+    if not model:
+        raise HTTPException(status_code=503, detail="Model service not ready")
+
     try:
-        # --- 1. CHECK CACHE (HIT) ---
+        # 1. CACHE CHECK
+        cache_key = generate_cache_key(data)
         if redis_available:
-            cache_key = generate_cache_key(data)
-            cached_result = cache.get(cache_key)
+            cached = cache.get(cache_key)
+            if cached:
+                logger.info("⚡ CACHE HIT")
+                return json.loads(cached)
 
-            if cached_result:
-                logger.info(f"⚡ CACHE HIT: {cache_key}")
-                # Return stored JSON directly
-                return json.loads(cached_result)
+        # 2. PREDICTION
+        # Data Preparation
+        df = pd.DataFrame([data.model_dump()])
+        df = create_features(df)
 
-        # --- 2. CACHE MISS -> RUN INFERENCE ---
-
-        # A. Convert Incoming JSON to DataFrame
-        input_dict = data.dict()
-        df = pd.DataFrame([input_dict])
-
-        # B. Feature Engineering (Using the same pipeline component)
-        df_processed = create_features(df)
-
-        # C. Select Features Expected by Model
         features = [
             'passenger_count', 'pickup_longitude', 'pickup_latitude',
             'dropoff_longitude', 'dropoff_latitude',
@@ -108,30 +96,25 @@ def predict(data: TaxiInput):
             'distance_haversine', 'distance_manhattan', 'bearing'
         ]
 
-        # D. Prepare Input (Float32)
-        X_input = df_processed[features].astype(np.float32).to_numpy()
+        X = df[features].astype(np.float32).to_numpy()
 
-        # E. ONNX Inference
-        pred_log = sess.run(None, {input_name: X_input})[0]
+        # Inference
+        results = model.run(None, {input_name: X})
 
-        # F. Inverse Log Transformation
-        pred_seconds = np.expm1(pred_log)[0][0]
+        log_pred = results[0].item()
+        pred_seconds = np.expm1(log_pred)
 
-        # Prepare Response Object
-        response_data = {
+        response = {
             "predicted_duration_seconds": round(float(pred_seconds), 2),
             "predicted_duration_minutes": round(float(pred_seconds / 60), 2)
         }
 
-        logger.info(f"🧠 MODEL INFERENCE: {pred_seconds:.2f} SECONDS")
-
-        # --- 3. SAVE TO CACHE (TTL: 1 HOUR) ---
+        # 3. CACHE SAVE
         if redis_available:
-            # Save the result to Redis for 3600 seconds
-            cache.setex(cache_key, 3600, json.dumps(response_data))
+            cache.setex(cache_key, 3600, json.dumps(response))
 
-        return response_data
+        return response
 
     except Exception as e:
-        logger.error(f"❌ PREDICTION ERROR: {e}")
+        logger.error(f"❌ ERROR: {e}")
         raise HTTPException(status_code=500, detail=str(e))

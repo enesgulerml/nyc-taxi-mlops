@@ -133,7 +133,7 @@ def train_model(X, y):
     # MODEL PARAMETERS
     pipeline = Pipeline([
         ('scaler', StandardScaler()),
-        ('modals', HistGradientBoostingRegressor(
+        ('models', HistGradientBoostingRegressor(
             max_iter=300,
             max_depth=10,
             learning_rate=0.1,
