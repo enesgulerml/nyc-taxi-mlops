@@ -28,3 +28,6 @@ prometheus-fastapi-instrumentator==7.1.0
 
 # TESTS & UTILS
 aiohttp==3.13.3
+pytest==9.0.2
+pytest-asyncio==1.3.0
+httpx==0.28.1
