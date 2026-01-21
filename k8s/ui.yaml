@@ -1,0 +1,39 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: ui-deployment
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: ui
+  template:
+    metadata:
+      labels:
+        app: ui
+    spec:
+      containers:
+      - name: ui
+        image: nyc-taxi-ui_service:latest
+        imagePullPolicy: Never
+        command: ["streamlit"]
+        args: ["run", "src/frontend/ui.py", "--server.port=8501", "--server.address=0.0.0.0"]
+        ports:
+        - containerPort: 8501
+        env:
+        - name: API_URL
+          value: "http://api-service:8000/predict"
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: ui-service
+spec:
+  selector:
+    app: ui
+  ports:
+    - protocol: TCP
+      port: 8501
+      targetPort: 8501
+  type: LoadBalancer

@@ -11,7 +11,7 @@ venv/
 env/
 
 # DATA & MODELS
-models/
+# models/
 data/
 
 # IDE
