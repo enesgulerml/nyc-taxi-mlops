@@ -11,9 +11,14 @@ from sklearn.model_selection import train_test_split
 
 from src.components.data_ingestion import load_and_clean_data
 from src.components.feature_engineering import create_features
+
 # Project Modules
-from src.config import (DATA_RAW_PATH, MLFLOW_EXPERIMENT_NAME,
-                        MLFLOW_TRACKING_URI, MODEL_SAVE_PATH)
+from src.config import (
+    DATA_RAW_PATH,
+    MLFLOW_EXPERIMENT_NAME,
+    MLFLOW_TRACKING_URI,
+    MODEL_SAVE_PATH,
+)
 from src.utils.logger import get_logger
 
 logger = get_logger("training_pipeline")
