@@ -1,7 +1,8 @@
-import aiohttp
 import asyncio
-import time
 import random
+import time
+
+import aiohttp
 
 # SETTINGS
 URL = "http://localhost:8000/predict"
@@ -21,7 +22,7 @@ def generate_payload():
         "pickup_latitude": 40.7484,
         "dropoff_longitude": -73.9665,
         "dropoff_latitude": 40.7812,
-        "pickup_datetime": "2026-01-20 15:30:00"
+        "pickup_datetime": "2026-01-20 15:30:00",
     }
 
 
@@ -86,7 +87,10 @@ async def main():
 
 
 if __name__ == "__main__":
-    if asyncio.get_event_loop_policy().__class__.__name__ == 'WindowsProactorEventLoopPolicy':
+    if (
+        asyncio.get_event_loop_policy().__class__.__name__
+        == "WindowsProactorEventLoopPolicy"
+    ):
         asyncio.set_event_loop_policy(asyncio.WindowsSelectorEventLoopPolicy())
 
     asyncio.run(main())

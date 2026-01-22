@@ -10,8 +10,10 @@ LOG_FILE_PATH = os.path.join(ROOT_DIR, "logs", "running_logs.log")
 
 # MODEL PARAMETERS
 NYC_BOUNDS = {
-    'min_lng': -74.3, 'max_lng': -73.7,
-    'min_lat': 40.5, 'max_lat': 40.9,
+    "min_lng": -74.3,
+    "max_lng": -73.7,
+    "min_lat": 40.5,
+    "max_lat": 40.9,
 }
 
 # TRAINING SETTINGS

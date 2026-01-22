@@ -1,6 +1,7 @@
 import logging
 import os
 import sys
+
 from src.config import LOG_FILE_PATH
 
 
@@ -18,7 +19,7 @@ def get_logger(name):
     formatter = logging.Formatter("[%(asctime)s] %(levelname)s [%(name)s]: %(message)s")
 
     # 1. WRITE TO FILE
-    file_handler = logging.FileHandler(LOG_FILE_PATH, encoding='utf-8')
+    file_handler = logging.FileHandler(LOG_FILE_PATH, encoding="utf-8")
     file_handler.setFormatter(formatter)
     logger.addHandler(file_handler)
 

@@ -1,5 +1,7 @@
-from pydantic import BaseModel
 from datetime import datetime
+
+from pydantic import BaseModel
+
 
 # DATA COMING FROM THE USER
 class TaxiInput(BaseModel):
@@ -18,9 +20,10 @@ class TaxiInput(BaseModel):
                 "pickup_latitude": 40.758,
                 "dropoff_longitude": -73.996,
                 "dropoff_latitude": 40.732,
-                "passenger_count": 1
+                "passenger_count": 1,
             }
         }
+
 
 class PredictionOutput(BaseModel):
     predicted_duration_seconds: float

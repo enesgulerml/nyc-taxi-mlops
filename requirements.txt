@@ -31,3 +31,7 @@ aiohttp==3.13.3
 pytest==9.0.2
 pytest-asyncio==1.3.0
 httpx==0.28.1
+
+# FORMATING
+isort==7.0.0
+black==26.1.0

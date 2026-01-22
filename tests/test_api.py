@@ -1,11 +1,12 @@
-import sys
 import os
-import pytest
-import numpy as np
-from fastapi.testclient import TestClient
-from unittest.mock import patch, MagicMock
+import sys
+from unittest.mock import MagicMock, patch
 
-sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
+import numpy as np
+import pytest
+from fastapi.testclient import TestClient
+
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 
 from src.api.main import app
 
@@ -37,7 +38,7 @@ def test_predict_endpoint(mock_cache, mock_model):
         "pickup_longitude": -73.9857,
         "pickup_latitude": 40.7484,
         "dropoff_longitude": -73.9665,
-        "dropoff_latitude": 40.7812
+        "dropoff_latitude": 40.7812,
     }
 
     response = client.post("/predict", json=payload)

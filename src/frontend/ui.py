@@ -1,8 +1,9 @@
-import streamlit as st
+import os
+from datetime import datetime
+
 import pandas as pd
 import requests
-from datetime import datetime
-import os
+import streamlit as st
 
 # API ADDRESS
 API_URL = os.getenv("API_URL", "http://127.0.0.1:8000/predict")
@@ -26,13 +27,23 @@ col1, col2 = st.columns(2)
 with col1:
     pickup_date = st.date_input("📅 Trip Date", datetime.now())
     pickup_time = st.time_input("⏰ Trip Time", datetime.now())
-    passenger_count = st.number_input("👤 Number Of Passengers", min_value=1, max_value=6, value=1)
+    passenger_count = st.number_input(
+        "👤 Number Of Passengers", min_value=1, max_value=6, value=1
+    )
 
 with col2:
-    pickup_lat = st.number_input("📍 Acquisition Latitude (Lat.)", value=40.7580, format="%.4f")
-    pickup_lon = st.number_input("📍 Acquisition Longitude (Lon)", value=-73.9855, format="%.4f")
-    dropoff_lat = st.number_input("🏁 Arrival Latitude (Lat.)", value=40.7320, format="%.4f")
-    dropoff_lon = st.number_input("🏁 Arrival Longitude (Lon)", value=-73.9960, format="%.4f")
+    pickup_lat = st.number_input(
+        "📍 Acquisition Latitude (Lat.)", value=40.7580, format="%.4f"
+    )
+    pickup_lon = st.number_input(
+        "📍 Acquisition Longitude (Lon)", value=-73.9855, format="%.4f"
+    )
+    dropoff_lat = st.number_input(
+        "🏁 Arrival Latitude (Lat.)", value=40.7320, format="%.4f"
+    )
+    dropoff_lon = st.number_input(
+        "🏁 Arrival Longitude (Lon)", value=-73.9960, format="%.4f"
+    )
 
 # PREDICTION BUTTON
 st.divider()
@@ -47,18 +58,18 @@ if st.button("🚀 Estimate the time", type="primary", use_container_width=True)
         "pickup_latitude": pickup_lat,
         "dropoff_longitude": dropoff_lon,
         "dropoff_latitude": dropoff_lat,
-        "passenger_count": passenger_count
+        "passenger_count": passenger_count,
     }
 
     # 2. SEND A REQUEST TO THE API
-    with st.spinner('The model is communicating with the API...'):
+    with st.spinner("The model is communicating with the API..."):
         try:
             response = requests.post(API_URL, json=payload)
 
             if response.status_code == 200:
                 result = response.json()
-                minutes = result['predicted_duration_minutes']
-                seconds = result['predicted_duration_seconds']
+                minutes = result["predicted_duration_minutes"]
+                seconds = result["predicted_duration_seconds"]
 
                 st.success("✅ Prediction Successful!")
 
@@ -73,7 +84,9 @@ if st.button("🚀 Estimate the time", type="primary", use_container_width=True)
 
         except requests.exceptions.ConnectionError:
             st.error("❌ Error: Could not connect to the API!")
-            st.info("💡 Hint: Are you sure the command 'uvicorn src.api.main:app' is running?")
+            st.info(
+                "💡 Hint: Are you sure the command 'uvicorn src.api.main:app' is running?"
+            )
         except Exception as e:
             st.error(f"An unexpected error occurred: {e}")
 

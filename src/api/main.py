@@ -1,17 +1,19 @@
-import numpy as np
-import pandas as pd
-import onnxruntime as rt
-import os
-import redis
-import json
 import hashlib
+import json
+import os
 from contextlib import asynccontextmanager
+
+import numpy as np
+import onnxruntime as rt
+import pandas as pd
+import redis
 from fastapi import FastAPI, HTTPException
-from src.config import MODEL_SAVE_PATH
-from src.components.feature_engineering import create_features
-from src.api.schemas import TaxiInput, PredictionOutput
-from src.utils.logger import get_logger
 from prometheus_fastapi_instrumentator import Instrumentator
+
+from src.api.schemas import PredictionOutput, TaxiInput
+from src.components.feature_engineering import create_features
+from src.config import MODEL_SAVE_PATH
+from src.utils.logger import get_logger
 
 # LOGGER
 logger = get_logger("api_service")
@@ -31,7 +33,9 @@ async def lifespan(app: FastAPI):
     # 1. REDIS
     REDIS_HOST = os.getenv("REDIS_HOST", "localhost")
     try:
-        cache = redis.Redis(host=REDIS_HOST, port=6379, decode_responses=True, socket_connect_timeout=1)
+        cache = redis.Redis(
+            host=REDIS_HOST, port=6379, decode_responses=True, socket_connect_timeout=1
+        )
         cache.ping()
         redis_available = True
         logger.info(f"✅ REDIS CONNECTED: {REDIS_HOST}")
@@ -51,7 +55,8 @@ async def lifespan(app: FastAPI):
     yield
 
     # 3. CLEANUP
-    if cache: cache.close()
+    if cache:
+        cache.close()
     logger.info("🛑 SHUTDOWN")
 
 
@@ -90,10 +95,18 @@ def predict(data: TaxiInput):
         df = create_features(df)
 
         features = [
-            'passenger_count', 'pickup_longitude', 'pickup_latitude',
-            'dropoff_longitude', 'dropoff_latitude',
-            'month', 'day_of_week', 'hour', 'is_weekend',
-            'distance_haversine', 'distance_manhattan', 'bearing'
+            "passenger_count",
+            "pickup_longitude",
+            "pickup_latitude",
+            "dropoff_longitude",
+            "dropoff_latitude",
+            "month",
+            "day_of_week",
+            "hour",
+            "is_weekend",
+            "distance_haversine",
+            "distance_manhattan",
+            "bearing",
         ]
 
         X = df[features].astype(np.float32).to_numpy()
@@ -106,7 +119,7 @@ def predict(data: TaxiInput):
 
         response = {
             "predicted_duration_seconds": round(float(pred_seconds), 2),
-            "predicted_duration_minutes": round(float(pred_seconds / 60), 2)
+            "predicted_duration_minutes": round(float(pred_seconds / 60), 2),
         }
 
         # 3. CACHE SAVE

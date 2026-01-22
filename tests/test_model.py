@@ -1,10 +1,11 @@
 import os
 import sys
-import pytest
-import onnxruntime as ort
-import numpy as np
 
-PROJECT_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
+import numpy as np
+import onnxruntime as ort
+import pytest
+
+PROJECT_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
 MODEL_PATH = os.path.join(PROJECT_ROOT, "models", "nyc_taxi_model.onnx")
 
 
@@ -18,8 +19,7 @@ class TestModelArtifact:
         """
         Test: Does the model file physically exist on the disk?
         """
-        assert os.path.exists(MODEL_PATH), \
-            f"Model file not found! Path: {MODEL_PATH}"
+        assert os.path.exists(MODEL_PATH), f"Model file not found! Path: {MODEL_PATH}"
 
     def test_model_loading(self):
         """
@@ -72,8 +72,9 @@ class TestModelArtifact:
             assert len(prediction) > 0, "The guess result came back empty."
 
             # Is the returned value a number?
-            assert isinstance(prediction[0][0], (np.floating, float)), \
-                "The model did not return a numerical value"
+            assert isinstance(
+                prediction[0][0], (np.floating, float)
+            ), "The model did not return a numerical value"
 
         except Exception as e:
             pytest.fail(f"Error during inference: {str(e)}")
