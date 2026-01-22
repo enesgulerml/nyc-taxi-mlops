@@ -3,7 +3,9 @@ version: '3.8'
 services:
   # API SERVICE
   api_service:
-    build: .
+    build:
+      context: .
+      dockerfile: src/api/Dockerfile
     container_name: nyc_taxi_api
     command: uvicorn src.api.main:app --host 0.0.0.0 --port 8000
     ports:
@@ -11,6 +13,7 @@ services:
     volumes:
       - ./models:/app/models
       - ./logs:/app/logs
+      - ./src:/app/src
     environment:
       - REDIS_HOST=redis_cache
     depends_on:
@@ -20,13 +23,17 @@ services:
 
   # UI SERVICE
   ui_service:
-    build: .
+    build:
+      context: .
+      dockerfile: src/frontend/Dockerfile
     container_name: nyc_taxi_ui
     environment:
       - API_URL=http://api_service:8000/predict
-    command: ["streamlit", "run", "src/frontend/ui.py", "--server.port", "8501", "--server.address", "0.0.0.0"]
+    command: [ "streamlit", "run", "src/frontend/ui.py", "--server.port", "8501", "--server.address", "0.0.0.0" ]
     ports:
       - "8501:8501"
+    volumes:
+      - ./src:/app/src
     depends_on:
       - api_service
     networks:

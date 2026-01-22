@@ -1,25 +1,44 @@
-# GIT
+# Git
 .git
 .gitignore
 
-# PYTHON
+# Python Cache & Build Artifacts
 __pycache__
 *.pyc
 *.pyo
 *.pyd
-venv/
-env/
+.Python
+build
+develop-eggs
+dist
+downloads
+eggs
+.eggs
+lib
+lib64
+parts
+sdist
+var
+wheels
+*.egg-info
+.installed.cfg
+*.egg
 
-# DATA & MODELS
-# models/
-data/
+# Virtual Environment
+venv
+env
+.env
+.venv
 
-# IDE
-.idea/
-.vscode/
+# IDE Settings
+.vscode
+.idea
 
-# OTHERS
-logs/
-tests/
-notebooks/
-docs/
+# Local Development Files
+docker-compose.yml
+Makefile
+README.md
+notebooks
+tests
+logs
+data
