@@ -12,10 +12,25 @@ spec:
       labels:
         app: ui
     spec:
+      # -----------------------------------------------------------
+      # 1. POD LEVEL SECURITY
+      # -----------------------------------------------------------
+      securityContext:
+        fsGroup: 1000
+
       containers:
       - name: ui
         image: nyc-taxi-ui_service:latest
         imagePullPolicy: Never
+
+        # -----------------------------------------------------------
+        # 2. CONTAINER LEVEL SECURITY
+        # -----------------------------------------------------------
+        securityContext:
+          runAsUser: 1000
+          runAsGroup: 1000
+          allowPrivilegeEscalation: false
+
         command: ["streamlit"]
         args: ["run", "src/frontend/ui.py", "--server.port=8501", "--server.address=0.0.0.0"]
         ports:

@@ -12,17 +12,35 @@ spec:
       labels:
         app: api
     spec:
+      securityContext:
+        fsGroup: 1000
+
       containers:
       - name: api
         image: nyc-taxi-api_service:latest
         imagePullPolicy: Never
+
+        securityContext:
+          runAsUser: 1000
+          runAsGroup: 1000
+          allowPrivilegeEscalation: false
+
         command: ["uvicorn"]
         args: ["src.api.main:app", "--host", "0.0.0.0", "--port", "8000"]
+
         ports:
         - containerPort: 8000
         env:
         - name: REDIS_HOST
           value: "redis-service"
+
+        volumeMounts:
+        - name: log-volume
+          mountPath: /app/logs
+
+      volumes:
+      - name: log-volume
+        emptyDir: {}
 
 ---
 
