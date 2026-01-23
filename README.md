@@ -90,6 +90,14 @@ Since the Docker image requires a pre-trained model file to be present, you **mu
 
 ```bash
     # 1. Setup virtual environment & dependencies
+    # === For Windows ===
+    python -m venv venv
+    .\venv\Scripts\Activate
+    
+    # === For Mac/Linux ===
+    python3 -m venv venv
+    source venv/bin/activate
+    
     make install
     
     # 2. Train the model (This saves the model to 'models/' directory)
