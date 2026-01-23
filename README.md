@@ -1,4 +1,13 @@
 # 🚖 NYC Taxi Duration Prediction (End-to-End MLOps)
+[![Docker](https://img.shields.io/badge/Docker-2496ED?style=for-the-badge&logo=docker&logoColor=white)](https://www.docker.com/)
+[![Kubernetes](https://img.shields.io/badge/Kubernetes-326CE5?style=for-the-badge&logo=kubernetes&logoColor=white)](https://kubernetes.io/)
+[![FastAPI](https://img.shields.io/badge/FastAPI-005571?style=for-the-badge&logo=fastapi)](https://fastapi.tiangolo.com/)
+[![Streamlit](https://img.shields.io/badge/Streamlit-FF4B4B?style=for-the-badge&logo=streamlit&logoColor=white)](https://streamlit.io/)
+[![Redis](https://img.shields.io/badge/Redis-DC382D?style=for-the-badge&logo=redis&logoColor=white)](https://redis.io/)
+[![Prometheus](https://img.shields.io/badge/Prometheus-E6522C?style=for-the-badge&logo=prometheus&logoColor=white)](https://prometheus.io/)
+[![Pytest](https://img.shields.io/badge/Pytest-0A9EDC?style=for-the-badge&logo=pytest&logoColor=white)](https://docs.pytest.org/)
+[![Python](https://img.shields.io/badge/Python-3.11-3776AB?style=for-the-badge&logo=python&logoColor=white)](https://www.python.org/)
+
 An end-to-end MLOps project that predicts taxi trip duration in New York City.
 This project demonstrates the transition from a research notebook to **a production-grade microservices architecture**, featuring optimized Docker builds, secure Kubernetes deployment, and high-performance inference using ONNX Runtime.
 
@@ -104,6 +113,8 @@ Since the Docker image requires a pre-trained model file to be present, you **mu
     make train
 ```
 
+![Streamlit Using Example](docs/images/Streamlit_Usage.gif)
+
 ### Option 1: Docker Compose (Recommended for Testing)
 Run the entire stack (API + UI + Redis) with a single command:
 ```bash
@@ -119,7 +130,7 @@ Run the entire stack (API + UI + Redis) with a single command:
 * **UI:** http://localhost:8501
 * **API Docs:** http://localhost:8000/docs
 
-### Option 2: Kubernetes (Minikube)
+### Option 2: Kubernetes (Minikube) | 🚧 Currently Unstable
 Deploy to a local Kubernetes cluster:
 
 ```bash
