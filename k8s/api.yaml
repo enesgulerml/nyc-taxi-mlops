@@ -17,7 +17,7 @@ spec:
 
       containers:
       - name: api
-        image: nyc-taxi-api_service:latest
+        image: nyc-taxi-mlops-api_service:latest
         imagePullPolicy: Never
 
         securityContext:

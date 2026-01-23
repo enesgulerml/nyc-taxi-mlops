@@ -20,7 +20,7 @@ spec:
 
       containers:
       - name: ui
-        image: nyc-taxi-ui_service:latest
+        image: nyc-taxi-mlops-ui_service:latest
         imagePullPolicy: Never
 
         # -----------------------------------------------------------
