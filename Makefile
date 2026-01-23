@@ -54,23 +54,10 @@ help:
 # ==============================================================================
 
 install:
-	@echo "---------------------------------------------------"
-	@echo "TARTING PROJECT SETUP..."
-	@echo "---------------------------------------------------"
-	@echo "1. Creating Virtual Environment (venv)..."
-	python -m venv $(VENV)
-
-	@echo "2. Upgrading Pip..."
-	$(VENV_PYTHON) -m pip install --upgrade pip
-
-	@echo "3. Installing Dependencies..."
-	$(PIP) install -r requirements.txt
-
-	@echo "---------------------------------------------------"
-	@echo "INSTALLATION COMPLETE!"
-	@echo "To activate venv manually: .\venv\Scripts\Activate"
-	@echo "To start training: make train"
-	@echo "---------------------------------------------------"
+	@echo "Installing Dependencies..."
+	pip install --upgrade pip
+	pip install -r requirements.txt
+	@echo "Installation Complete! Ready to rock."
 
 clean-venv:
 	@echo "Removing virtual environment..."
