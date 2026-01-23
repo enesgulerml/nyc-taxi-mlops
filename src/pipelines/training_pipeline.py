@@ -1,3 +1,6 @@
+import os
+import pathlib
+
 import joblib
 import mlflow
 import mlflow.sklearn
@@ -13,12 +16,7 @@ from src.components.data_ingestion import load_and_clean_data
 from src.components.feature_engineering import create_features
 
 # Project Modules
-from src.config import (
-    DATA_RAW_PATH,
-    MLFLOW_EXPERIMENT_NAME,
-    MLFLOW_TRACKING_URI,
-    MODEL_SAVE_PATH,
-)
+from src.config import DATA_RAW_PATH, MLFLOW_EXPERIMENT_NAME, MODEL_SAVE_PATH
 from src.utils.logger import get_logger
 
 logger = get_logger("training_pipeline")
@@ -30,21 +28,29 @@ def run_training():
     Logs all experiments to MLflow and saves the best model to disk.
     """
     try:
-        logger.info("🚀 TRAINING PIPELINE INITIALIZED")
+        logger.info("🚀 TRAINING PIPELINE INITIALIZED (LOCAL MODE FORCED)")
 
-        # 1. MLFLOW SETUP
-        mlflow.set_tracking_uri(MLFLOW_TRACKING_URI)
+        mlruns_path = pathlib.Path("./mlruns").resolve()
+        local_tracking_uri = mlruns_path.as_uri()
+
+        mlflow.set_tracking_uri(local_tracking_uri)
         mlflow.set_experiment(MLFLOW_EXPERIMENT_NAME)
-        logger.info(f"📡 MLFLOW TRACKING URI: {MLFLOW_TRACKING_URI}")
+
+        logger.info(f"📡 MLFLOW TRACKING URI FIXED: {local_tracking_uri}")
 
         # 2. DATA LOADING & PREPROCESSING
         logger.info("💾 LOADING AND CLEANING RAW DATA...")
+
+        if not os.path.exists(DATA_RAW_PATH):
+            abs_data_path = os.path.abspath(DATA_RAW_PATH)
+            raise FileNotFoundError(f"❌ DATA FILE NOT FOUND AT: {abs_data_path}")
+
         df = load_and_clean_data(DATA_RAW_PATH)
 
         logger.info("🛠️ APPLYING FEATURE ENGINEERING...")
         df_processed = create_features(df)
 
-        # Velocity Filter (Domain Logic)
+        # Velocity Filter
         df_processed["avg_speed_kph"] = (
             df_processed["distance_haversine"] / df_processed["trip_duration"]
         ) * 3600
@@ -72,7 +78,6 @@ def run_training():
         ]
         target = "trip_duration_log"
 
-        # Validation: Check if columns exist
         if target not in df_processed.columns:
             raise KeyError(f"Target column '{target}' not found in DataFrame!")
 
@@ -84,8 +89,7 @@ def run_training():
             X, y, test_size=0.2, random_state=42
         )
 
-        # Define simulation parameters
-        NUM_TRIALS = 30
+        NUM_TRIALS = 1
         best_rmse = float("inf")
         best_model = None
         best_params = {}
@@ -94,8 +98,6 @@ def run_training():
 
         # 3. HYPERPARAMETER TUNING LOOP
         for i in range(1, NUM_TRIALS + 1):
-
-            # Randomly sample hyperparameters
             params = {
                 "n_estimators": np.random.randint(50, 150),
                 "max_depth": np.random.randint(5, 20),
@@ -105,16 +107,13 @@ def run_training():
             }
 
             with mlflow.start_run(run_name=f"Trial_{i:02d}"):
-                # TRAIN
                 model = RandomForestRegressor(**params, n_jobs=-1)
                 model.fit(X_train, y_train)
 
-                # PREDICT & EVALUATE
                 y_pred = model.predict(X_test)
                 rmse = np.sqrt(mean_squared_error(y_test, y_pred))
                 mae = mean_absolute_error(y_test, y_pred)
 
-                # LOG TO MLFLOW
                 mlflow.log_params(params)
                 mlflow.log_metric("rmse", rmse)
                 mlflow.log_metric("mae", mae)
@@ -123,14 +122,11 @@ def run_training():
                     f"Trial {i}/{NUM_TRIALS} | ROOT MSE: {rmse:.4f} | Params: {params}"
                 )
 
-                # Check if this is the best model so far
                 if rmse < best_rmse:
                     best_rmse = rmse
                     best_model = model
                     best_params = params
                     logger.info(f"🌟 NEW BEST MODEL FOUND! (ROOT MSE: {best_rmse:.4f})")
-
-                    # Tag this run as candidate
                     mlflow.set_tag("candidate", "true")
 
         # 4. SAVE THE BEST MODEL (ONNX Export)
@@ -139,22 +135,29 @@ def run_training():
                 f"📦 EXPORTING THE BEST MODEL (ROOT MSE: {best_rmse:.4f}) TO ONNX..."
             )
 
-            # Convert to ONNX
             initial_type = [("float_input", FloatTensorType([None, len(features)]))]
             onnx_model = convert_sklearn(best_model, initial_types=initial_type)
 
-            # Save to disk
+            save_dir = os.path.dirname(MODEL_SAVE_PATH)
+            if save_dir and not os.path.exists(save_dir):
+                os.makedirs(save_dir)
+                logger.info(f"📁 Created missing directory: {save_dir}")
+
             with open(MODEL_SAVE_PATH, "wb") as f:
                 f.write(onnx_model.SerializeToString())
 
             logger.info(f"✅ BEST MODEL SAVED SUCCESSFULLY TO: {MODEL_SAVE_PATH}")
 
-            # Log Best Model details to MLflow explicitly
-            with mlflow.start_run(run_name="Best_Model_Final"):
-                mlflow.log_params(best_params)
-                mlflow.log_metric("final_best_rmse", best_rmse)
-                mlflow.sklearn.log_model(best_model, "best_random_forest_model")
-                logger.info("🏆 BEST MODEL ARTIFACTS UPLOADED TO MLFLOW REGISTRY.")
+            try:
+                with mlflow.start_run(run_name="Best_Model_Final"):
+                    mlflow.log_params(best_params)
+                    mlflow.log_metric("final_best_rmse", best_rmse)
+                    mlflow.sklearn.log_model(best_model, "best_random_forest_model")
+                    logger.info("🏆 BEST MODEL ARTIFACTS LOGGED.")
+            except Exception as ml_err:
+                logger.warning(
+                    f"⚠️ Model saved to disk but MLflow logging skipped due to registry config: {ml_err}"
+                )
 
         logger.info("🏁 TRAINING PIPELINE SUCCESSFULLY COMPLETED")
 
