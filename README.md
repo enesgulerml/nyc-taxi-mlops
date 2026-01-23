@@ -60,7 +60,42 @@ The system follows a decoupled **Microservices Architecture:**
 ```
 
 ---
+## 📥 Installation & Data Setup
+### 1. Clone the Repository
+Start by cloning the project to your local machine:
+```bash
+git clone https://github.com/enesgulerml/nyc-taxi-mlops.git
+cd nyc-taxi-mlops
+```
+### 2. Download the Dataset
+This project uses the **NYC Taxi Trip Duration** dataset from Kaggle. Due to size constraints, the data is not included in the repository.
+1. **Download:** Go to the [Kaggle](https://www.kaggle.com/competitions/nyc-taxi-trip-duration) Competition Page and download train.csv.
+2. **Place Data:** Extract the file into the data/ directory in the project root.
+### Your folder structure should look like this:
+```text
+nyc-taxi-mlops/
+├── data/
+│   └── train.csv   <-- Place file here
+├── k8s/
+├── src/
+├── Makefile
+└── ...
+```
+
+---
 ## 🛠️ Installation & Usage
+
+### Prerequisite: Generate the Model
+Since the Docker image requires a pre-trained model file to be present, you **must** run the training pipeline locally first.
+
+```bash
+    # 1. Setup virtual environment & dependencies
+    make install
+    
+    # 2. Train the model (This saves the model to 'models/' directory)
+    make train
+```
+
 ### Option 1: Docker Compose (Recommended for Testing)
 Run the entire stack (API + UI + Redis) with a single command:
 ```bash
@@ -81,36 +116,76 @@ Deploy to a local Kubernetes cluster:
 
 ```bash
     # 1. Start Minikube
-    minikube start
+    make k8s-start
     
     # 2. Load Images into Minikube (Important for local images)
-    minikube image load nyc-taxi-api_service:latest
-    minikube image load nyc-taxi-ui_service:latest
+    make k8s-build
     
     # 3. Apply Manifests
-    kubectl apply -f k8s/redis.yaml
-    kubectl apply -f k8s/api.yaml
-    kubectl apply -f k8s/ui.yaml
+    make k8s-up
     
     # 4. Access the UI
-    minikube service ui-service
+    make k8s-forward
+    
+    # 5. Stop Minikube
+    make k8s-down
+```
+
+### Note for Mac/Linux Users:
+This project is primarily configured for a Windows (PowerShell) environment.
+If you are running this project on macOS or Linux, the default k8s-build command in the Makefile will not work due to PowerShell syntax.
+Please modify the k8s-build target in your Makefile to use the standard Bash syntax as follows:
+```bash
+    # For Mac/Linux (Bash/Zsh)
+    k8s-build:
+        @eval $$(minikube -p minikube docker-env) && docker-compose build
 ```
 
 ---
-## 🧪 Training Pipeline (Offline)
-The training pipeline (src/pipelines/training_pipeline.py) is decoupled from the production API.
-1. Loads raw data.
-2. Performs Feature Engineering.
-3. Trains a Random Forest model.
-4. Logs experiments and metrics to MLflow.
-5. Converts and saves the best model as ONNX (model.onnx).
+## 📊 Performance & Monitoring
+To validate the efficiency of the inference pipeline, we implemented a real-time monitoring stack using **Prometheus and Grafana**.
+The primary goal was to measure the impact of the **Redis Caching Layer** on response times under load.
+
+<div align="center">
+  <img src="docs/images/Performance.png" alt="Performance Metrics" width="800">
+  <p><em>Figure: Real-time latency comparison (Redis vs Model)</em></p>
+</div>
+
+### 🚀 Key Results: The "Redis Effect"
+As demonstrated in the Grafana dashboard above, the integration of Redis provided a massive performance boost:
+* **🐢 Model Inference (Cache Miss):** When the request is processed by the model for the first time, the average latency is **~281 ms**.
+* **⚡ Redis Cache (Cache Hit):** When the same request is repeated, the system serves the prediction from memory in just **~3.32 ms**.
+
+### 📉 Impact Analysis
+* **Speedup:** The system is approximately **85x faster** on cache hits.
+* **Throughput:** The API successfully handled traffic spikes (up to **180 RPS**) while maintaining low latency for cached requests.
+* **Efficiency:** This architecture significantly reduces the computational load on the ML model, allowing for scalable deployment.
+
+
 
 ---
-## 📊 Results & Metrics
-* **Model:** HistGradientBoosting Regressor (ONNX)
-* **Inference Latency:** ~15ms (P95)
-* **Docker Image Size:** ~650MB (Reduced from 2GB)
-* **Security Compliance:** Non-root execution
+## 🧪 Testing & Quality Assurance
+To ensure the reliability and robustness of the Machine Learning pipeline, this project maintains a suite of automated unit tests.
+We use **pytest** as our primary testing framework to validate data processing logic, feature engineering, and model training components.
+
+### 🚀 How to Run Tests
+You can execute the full test suite using the provided **Makefile** command.
+This will run all tests located in the tests/ directory within the configured virtual environment.
+```bash
+    make test
+```
+
+### 🔍 Scope of Tests
+The testing strategy focuses on the following key areas:
+* **Data Validation:** Ensures that raw data is correctly loaded, cleaned, and adheres to the expected schema (e.g., removing outliers, handling missing values).
+* **Feature Engineering:** Verifies the mathematical correctness of transformation functions (e.g., Haversine distance calculation, time conversions).
+* **Pipeline Integrity:** Checks if the training pipeline runs end-to-end without execution errors (sanity checks).
+
+Note: Tests are designed to be fast and lightweight, allowing for quick feedback during development and CI/CD processes.
+
+---
+## 📊 Metrics
+Wait for results...
 
 ---
 ## 👨‍💻 Author
