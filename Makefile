@@ -8,6 +8,9 @@ DOCKER_COMPOSE = docker-compose
 KUBECTL = kubectl
 MINIKUBE = minikube
 K8S_DIR = k8s
+VENV = venv
+VENV_PYTHON = $(VENV)/Scripts/python
+VENV_PIP = $(VENV)/Scripts/pip
 
 .PHONY: help install train test clean docker-up docker-down k8s-start k8s-build k8s-up k8s-down
 
@@ -19,8 +22,11 @@ help:
 	@echo ---------------------------------------------------
 	@echo  NYC TAXI MLOPS PROJECT - COMMAND CENTER
 	@echo ---------------------------------------------------
-	@echo  [ LOCAL DEVELOPMENT ]
-	@echo  make install       : Install Python dependencies
+	@echo  [ ENVIRONMENT ]
+	@echo  make install       : Install, activate Python dependencies to venv
+	@echo  make clean-venv    : Cleans the venv
+	@echo ---------------------------------------------------
+	@echo  [ MODEL / TESTS ]
 	@echo  make train         : Train the model locally
 	@echo  make test          : Run unit tests
 	@echo ---------------------------------------------------
@@ -38,16 +44,41 @@ help:
 	@echo  make k8s-restart   : Restart Pods
 	@echo  make k8s-forward   : Port-Forward UI
 	@echo ---------------------------------------------------
-	@echo  [ CLEANING ]
-	@echo  make clean     : Deletes Docker
+	@echo  [ CLEAN / FORMAT ]
+	@echo  make clean         : Cleans Docker
+	@echo  make format        : Formats all codes
 	@echo ---------------------------------------------------
 
 # ==============================================================================
-#  LOCAL DEPLOYMENT & TESTS
+#  ENVIRONMENT
 # ==============================================================================
 
 install:
+	@echo "---------------------------------------------------"
+	@echo "TARTING PROJECT SETUP..."
+	@echo "---------------------------------------------------"
+	@echo "1. Creating Virtual Environment (venv)..."
+	python -m venv $(VENV)
+
+	@echo "2. Upgrading Pip..."
+	$(VENV_PYTHON) -m pip install --upgrade pip
+
+	@echo "3. Installing Dependencies..."
 	$(PIP) install -r requirements.txt
+
+	@echo "---------------------------------------------------"
+	@echo "INSTALLATION COMPLETE!"
+	@echo "To activate venv manually: .\venv\Scripts\Activate"
+	@echo "To start training: make train"
+	@echo "---------------------------------------------------"
+
+clean-venv:
+	@echo "Removing virtual environment..."
+	rmdir /s /q $(VENV)
+
+# ==============================================================================
+#  MODEL & TESTS
+# ==============================================================================
 
 train:
 	$(PYTHON) -m src.pipelines.training_pipeline
@@ -99,8 +130,13 @@ k8s-forward:
 	$(KUBECTL) port-forward service/ui-service 8501:8501
 
 # ==============================================================================
-#  CLEAN
+#  CLEANING & FORMAT
 # ==============================================================================
 
 clean:
 	docker system prune -f
+
+format:
+	@echo "Formatting code..."
+	$(VENV_PYTHON) -m isort .
+	$(VENV_PYTHON) -m black .
