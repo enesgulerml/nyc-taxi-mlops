@@ -1,6 +1,5 @@
 import os
 import pathlib
-
 import joblib
 import mlflow
 import mlflow.sklearn
@@ -28,15 +27,28 @@ def run_training():
     Logs all experiments to MLflow and saves the best model to disk.
     """
     try:
-        logger.info("🚀 TRAINING PIPELINE INITIALIZED (LOCAL MODE FORCED)")
+        logger.info("🚀 TRAINING PIPELINE INITIALIZED")
 
-        mlruns_path = pathlib.Path("./mlruns").resolve()
-        local_tracking_uri = mlruns_path.as_uri()
+        # ---------------------------------------------------------
+        # 1. MLFLOW CONNECTION SETUP (CRITICAL FIX) 📡
+        # ---------------------------------------------------------
+        # Docker compose'dan gelen 'MLFLOW_TRACKING_URI' var mı?
+        # Varsa onu kullan (http://mlflow-server:5000), yoksa yerel klasörü kullan.
 
-        mlflow.set_tracking_uri(local_tracking_uri)
+        tracking_uri = os.getenv("MLFLOW_TRACKING_URI")
+
+        if not tracking_uri:
+            # Fallback: Docker dışında çalışıyorsan ./mlruns klasörüne yaz
+            mlruns_path = pathlib.Path("./mlruns").resolve()
+            tracking_uri = mlruns_path.as_uri()
+            logger.warning(f"⚠️ No MLFLOW_TRACKING_URI found. Using Local File Store: {tracking_uri}")
+        else:
+            logger.info(f"📡 Connecting to MLflow Server at: {tracking_uri}")
+
+        mlflow.set_tracking_uri(tracking_uri)
         mlflow.set_experiment(MLFLOW_EXPERIMENT_NAME)
 
-        logger.info(f"📡 MLFLOW TRACKING URI FIXED: {local_tracking_uri}")
+        # ---------------------------------------------------------
 
         # 2. DATA LOADING & PREPROCESSING
         logger.info("💾 LOADING AND CLEANING RAW DATA...")
@@ -52,12 +64,12 @@ def run_training():
 
         # Velocity Filter
         df_processed["avg_speed_kph"] = (
-            df_processed["distance_haversine"] / df_processed["trip_duration"]
-        ) * 3600
+                                                df_processed["distance_haversine"] / df_processed["trip_duration"]
+                                        ) * 3600
         df_processed = df_processed[
             (df_processed["avg_speed_kph"] <= 100)
             & (df_processed["avg_speed_kph"] >= 0.1)
-        ]
+            ]
 
         df_processed["trip_duration_log"] = np.log1p(df_processed["trip_duration"])
 
@@ -89,7 +101,7 @@ def run_training():
             X, y, test_size=0.2, random_state=42
         )
 
-        NUM_TRIALS = 1
+        NUM_TRIALS = 50
         best_rmse = float("inf")
         best_model = None
         best_params = {}
@@ -127,6 +139,7 @@ def run_training():
                     best_model = model
                     best_params = params
                     logger.info(f"🌟 NEW BEST MODEL FOUND! (ROOT MSE: {best_rmse:.4f})")
+                    # En iyi modeli etiketle
                     mlflow.set_tag("candidate", "true")
 
         # 4. SAVE THE BEST MODEL (ONNX Export)
@@ -138,6 +151,7 @@ def run_training():
             initial_type = [("float_input", FloatTensorType([None, len(features)]))]
             onnx_model = convert_sklearn(best_model, initial_types=initial_type)
 
+            # Klasör kontrolü
             save_dir = os.path.dirname(MODEL_SAVE_PATH)
             if save_dir and not os.path.exists(save_dir):
                 os.makedirs(save_dir)
@@ -148,15 +162,22 @@ def run_training():
 
             logger.info(f"✅ BEST MODEL SAVED SUCCESSFULLY TO: {MODEL_SAVE_PATH}")
 
+            # Final kaydını MLflow'a işle
             try:
                 with mlflow.start_run(run_name="Best_Model_Final"):
                     mlflow.log_params(best_params)
                     mlflow.log_metric("final_best_rmse", best_rmse)
+
+                    # Modeli MLflow'a artifact olarak yükle (Opsiyonel ama önerilir)
                     mlflow.sklearn.log_model(best_model, "best_random_forest_model")
+
+                    # ONNX dosyasını da artifact olarak yükle
+                    mlflow.log_artifact(MODEL_SAVE_PATH, artifact_path="onnx_model")
+
                     logger.info("🏆 BEST MODEL ARTIFACTS LOGGED.")
             except Exception as ml_err:
                 logger.warning(
-                    f"⚠️ Model saved to disk but MLflow logging skipped due to registry config: {ml_err}"
+                    f"⚠️ Model saved to disk but MLflow logging skipped: {ml_err}"
                 )
 
         logger.info("🏁 TRAINING PIPELINE SUCCESSFULLY COMPLETED")
