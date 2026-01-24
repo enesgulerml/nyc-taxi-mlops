@@ -119,6 +119,7 @@ Since the Docker image requires a pre-trained model file to be present, you **mu
 Run the entire stack (API + UI + Redis) with a single command:
 ```bash
     # Build and Start Services
+    make docker-build
     make docker-up
     
     # Check Logs
@@ -130,7 +131,7 @@ Run the entire stack (API + UI + Redis) with a single command:
 * **UI:** http://localhost:8501
 * **API Docs:** http://localhost:8000/docs
 
-### Option 2: Kubernetes (Minikube) | 🚧 Currently Unstable
+### Option 2: Kubernetes (Minikube)
 Deploy to a local Kubernetes cluster:
 
 ```bash

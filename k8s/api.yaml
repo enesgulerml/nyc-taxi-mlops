@@ -18,7 +18,7 @@ spec:
       containers:
       - name: api
         image: nyc-taxi-mlops-api_service:latest
-        imagePullPolicy: Never
+        imagePullPolicy: IfNotPresent
 
         securityContext:
           runAsUser: 1000
@@ -26,7 +26,22 @@ spec:
           allowPrivilegeEscalation: false
 
         command: ["uvicorn"]
-        args: ["src.api.main:app", "--host", "0.0.0.0", "--port", "8000"]
+        args: ["src.api.main:app", "--host", "0.0.0.0", "--port", "8000", "--workers", "1"]
+
+        resources:
+          requests:
+            memory: "512Mi"
+            cpu: "250m"
+          limits:
+            memory: "1Gi"
+            cpu: "1000m"
+
+        startupProbe:
+          httpGet:
+            path: /
+            port: 8000
+          failureThreshold: 30
+          periodSeconds: 10
 
         ports:
         - containerPort: 8000
