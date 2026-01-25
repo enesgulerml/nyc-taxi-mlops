@@ -1,4 +1,4 @@
-cdname: CD Pipeline (Deploy to ECR)
+name: CD Pipeline (Deploy to ECR)
 
 on:
   push:
