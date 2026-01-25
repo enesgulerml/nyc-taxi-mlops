@@ -204,8 +204,42 @@ The testing strategy focuses on the following key areas:
 Note: Tests are designed to be fast and lightweight, allowing for quick feedback during development and CI/CD processes.
 
 ---
-## 📊 Metrics
-Wait for results...
+## 🧪 Experiments & Hyperparameter Tuning
+
+To achieve the best predictive performance, I implemented an automated training pipeline integrated with **MLflow**. Instead of relying on default parameters, I conducted a comprehensive hyperparameter search to optimize the **Random Forest Regressor**.
+
+* **Experiment Tracker:** MLflow (Local & Dockerized)
+* **Total Trials:** 50+ Iterations
+* **Optimization Strategy:** Random Search (Simulated)
+
+### 🏆 Champion Model Selection
+After analyzing 50 candidates, **Trial_34** was selected as the production model based on the lowest RMSE score on the validation set.
+
+| Parameter | Value | Description |
+| :--- | :--- | :--- |
+| **n_estimators** | `122` | High number of trees ensures robust predictions. |
+| **max_depth** | `19` | Deeper trees captured complex non-linear patterns. |
+| **min_samples_split** | `2` | Allowed for detailed splitting at nodes. |
+| **min_samples_leaf** | `1` | High variance capture (balanced by ensemble). |
+
+### 📊 Performance Visualization
+
+#### 1. Hyperparameter Impact Analysis
+The **Parallel Coordinates Plot** below visualizes the relationship between hyperparameters and model error (RMSE).
+> **Insight:** There is a clear correlation between higher `max_depth` (17-19) and lower RMSE (indicated by the blue lines). Shallower trees consistently underperformed.
+
+![MLflow Parallel Coordinates](docs/images/MLflow_2.png)
+
+#### 2. Leaderboard Snapshot
+A comparison of the top performing runs sorted by RMSE. The champion model (Trial_34) demonstrated superior consistency compared to other candidates.
+
+![MLflow Leaderboard](docs/images/MLflow.png)
+
+### 📉 Final Metrics (Test Set)
+The final model was evaluated on an unseen test set:
+
+* **RMSE (Root Mean Squared Error):** `0.3177` ✅
+* **MAE (Mean Absolute Error):** `0.2336` ✅
 
 ---
 ## 👨‍💻 Author
