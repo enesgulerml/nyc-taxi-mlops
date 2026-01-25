@@ -41,6 +41,8 @@ ENV PYTHONPATH=/app
 COPY --chown=appuser:appgroup src/ ./src/
 COPY --chown=appuser:appgroup models/ ./models/
 
+RUN mkdir -p /app/logs && chown -R appuser:appgroup /app/logs
+
 # Switch to non-root user
 USER appuser
 
