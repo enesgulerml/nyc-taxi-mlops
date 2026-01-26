@@ -204,6 +204,26 @@ The testing strategy focuses on the following key areas:
 Note: Tests are designed to be fast and lightweight, allowing for quick feedback during development and CI/CD processes.
 
 ---
+## ☁️ Cloud Deployment & Infrastructure (AWS Proof)
+The entire system is deployed on **AWS EC2 (eu-central-1)**, utilizing a secure VPC configuration. Below are the evidences of the live infrastructure and network security settings.
+
+### 1. 🟢 Live Application (Streamlit on EC2)
+The application is accessible via the Public IPv4 address of the EC2 instance on port `8501`.
+![AWS Live App](docs/images/aws/aws-1.png)
+
+### 2. 🖥️ Compute Infrastructure
+The microservices are hosted on a **t3.micro** instance running Ubuntu Server. The instance is monitored and managed via AWS Console.
+![AWS EC2 Instance](docs/images/aws/aws-2.png)
+
+### 3. 🛡️ Network Security & Port Configuration
+Custom **Security Groups** were configured to enforce the principle of least privilege, opening only necessary ports for the microservices:
+* **Port 22 (SSH):** Remote management (restricted access).
+* **Port 8000 (TCP):** FastAPI Backend access.
+* **Port 8501 (TCP):** Streamlit Frontend access.
+![AWS Security Groups](docs/images/aws/aws-3.png)
+
+
+---
 ## 🧪 Experiments & Hyperparameter Tuning
 
 To achieve the best predictive performance, I implemented an automated training pipeline integrated with **MLflow**. Instead of relying on default parameters, I conducted a comprehensive hyperparameter search to optimize the **Random Forest Regressor**.
