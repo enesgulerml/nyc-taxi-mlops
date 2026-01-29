@@ -35,3 +35,6 @@ httpx==0.28.1
 # FORMATING
 isort==7.0.0
 black==26.1.0
+
+# OTHER
+gdown==5.2.1
