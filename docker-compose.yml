@@ -3,6 +3,7 @@ version: '3.8'
 services:
   # API SERVICE
   api_service:
+    image: nyc-taxi-mlops-api_service:latest
     build:
       context: .
       dockerfile: src/api/Dockerfile
@@ -23,6 +24,7 @@ services:
 
   # UI SERVICE
   ui_service:
+    image: nyc-taxi-mlops-ui_service:latest
     build:
       context: .
       dockerfile: src/frontend/Dockerfile
