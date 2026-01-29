@@ -76,19 +76,17 @@ Start by cloning the project to your local machine:
 git clone https://github.com/enesgulerml/nyc-taxi-mlops.git
 cd nyc-taxi-mlops
 ```
-### 2. Download the Dataset
-This project uses the **NYC Taxi Trip Duration** dataset from Kaggle. Due to size constraints, the data is not included in the repository.
-1. **Download:** Go to the [Kaggle](https://www.kaggle.com/competitions/nyc-taxi-trip-duration) Competition Page and download train.csv.
-2. **Place Data:** Extract the file into the data/ directory in the project root.
-### Your folder structure should look like this:
-```text
-nyc-taxi-mlops/
-├── data/
-│   └── train.csv   <-- Place file here
-├── k8s/
-├── src/
-├── Makefile
-└── ...
+### 2. Data Ingestion (Zero-Touch)
+This project utilizes an automated data ingestion pipeline. You **do not** need to manually download datasets from Kaggle.
+
+The `make train` (or `make start-all-k8s`) command automatically:
+1.  Checks if the data exists.
+2.  If not, pulls the raw dataset from the configured remote storage (e.g., Google Drive / Cloud Storage) via `gdown`.
+3.  Validates and processes the data for training.
+
+**Just run:**
+```bash
+make train
 ```
 
 ---
@@ -255,11 +253,17 @@ A comparison of the top performing runs sorted by RMSE. The champion model (Tria
 
 ![MLflow Leaderboard](docs/images/MLflow.png)
 
-### 📉 Final Metrics (Test Set)
-The final model was evaluated on an unseen test set:
+### 📉 Model Performance & Optimization
+The model architecture was optimized for **Kubernetes deployment**, prioritizing low latency and memory efficiency over marginal accuracy gains.
 
-* **RMSE (Root Mean Squared Error):** `0.3177` ✅
-* **MAE (Mean Absolute Error):** `0.2336` ✅
+**Optimization Results:**
+* **Model Size:** Reduced from **1.2 GB** to **~33 MB** (97% Reduction) 📉
+* **Inference Speed:** <50ms latency
+* **Deployment Status:** Ready for low-resource containers (No OOM errors).
+
+**Final Metrics (Test Set):**
+* **RMSE (Root Mean Squared Error):** `0.3459` (Optimized for Production)
+* **MAE (Mean Absolute Error):** `~0.25`
 
 ---
 ## 👨‍💻 Author
