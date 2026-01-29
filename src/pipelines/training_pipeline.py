@@ -23,22 +23,18 @@ logger = get_logger("training_pipeline")
 
 def run_training():
     """
-    Executes the training pipeline with hyperparameter tuning simulation.
-    Logs all experiments to MLflow and saves the best model to disk.
+    Executes the training pipeline with FIXED PRODUCTION PARAMETERS.
+    No loop, single run, optimized for deployment.
     """
     try:
-        logger.info("🚀 TRAINING PIPELINE INITIALIZED")
+        logger.info("🚀 PRODUCTION TRAINING PIPELINE INITIALIZED")
 
         # ---------------------------------------------------------
-        # 1. MLFLOW CONNECTION SETUP (CRITICAL FIX) 📡
+        # 1. MLFLOW CONNECTION SETUP
         # ---------------------------------------------------------
-        # Docker compose'dan gelen 'MLFLOW_TRACKING_URI' var mı?
-        # Varsa onu kullan (http://mlflow-server:5000), yoksa yerel klasörü kullan.
-
         tracking_uri = os.getenv("MLFLOW_TRACKING_URI")
 
         if not tracking_uri:
-            # Fallback: Docker dışında çalışıyorsan ./mlruns klasörüne yaz
             mlruns_path = pathlib.Path("./mlruns").resolve()
             tracking_uri = mlruns_path.as_uri()
             logger.warning(f"⚠️ No MLFLOW_TRACKING_URI found. Using Local File Store: {tracking_uri}")
@@ -49,8 +45,8 @@ def run_training():
         mlflow.set_experiment(MLFLOW_EXPERIMENT_NAME)
 
         # ---------------------------------------------------------
-
         # 2. DATA LOADING & PREPROCESSING
+        # ---------------------------------------------------------
         logger.info("💾 LOADING AND CLEANING RAW DATA...")
 
         if not os.path.exists(DATA_RAW_PATH):
@@ -67,13 +63,12 @@ def run_training():
                                                 df_processed["distance_haversine"] / df_processed["trip_duration"]
                                         ) * 3600
         df_processed = df_processed[
-            (df_processed["avg_speed_kph"] <= 100)
-            & (df_processed["avg_speed_kph"] >= 0.1)
+            (df_processed["avg_speed_kph"] <= 100) & (df_processed["avg_speed_kph"] >= 0.1)
             ]
 
         df_processed["trip_duration_log"] = np.log1p(df_processed["trip_duration"])
 
-        # Prepare Features and Target
+        # Features
         features = [
             "passenger_count",
             "pickup_longitude",
@@ -90,100 +85,71 @@ def run_training():
         ]
         target = "trip_duration_log"
 
-        if target not in df_processed.columns:
-            raise KeyError(f"Target column '{target}' not found in DataFrame!")
-
         X = df_processed[features]
         y = df_processed[target]
 
-        # Train/Test Split
         X_train, X_test, y_train, y_test = train_test_split(
             X, y, test_size=0.2, random_state=42
         )
 
-        NUM_TRIALS = 50
-        best_rmse = float("inf")
-        best_model = None
-        best_params = {}
+        # ---------------------------------------------------------
+        # 3. PRODUCTION TRAINING (BEST PARAMS) 🏆
+        # ---------------------------------------------------------
 
-        logger.info(f"🧪 Starting Hyperparameter Tuning ({NUM_TRIALS} Trials)...")
+        prod_params = {
+            "n_estimators": 122,
+            "max_depth": 12,
+            "min_samples_split": 5,
+            "min_samples_leaf": 3,
+            "random_state": 42,
+            "n_jobs": -1
+        }
 
-        # 3. HYPERPARAMETER TUNING LOOP
-        for i in range(1, NUM_TRIALS + 1):
-            params = {
-                "n_estimators": np.random.randint(50, 150),
-                "max_depth": np.random.randint(5, 20),
-                "min_samples_split": np.random.randint(2, 10),
-                "min_samples_leaf": np.random.randint(1, 5),
-                "random_state": 42,
-            }
+        logger.info(f"🏭 STARTING TRAINING WITH PRODUCTION PARAMS: {prod_params}")
 
-            with mlflow.start_run(run_name=f"Trial_{i:02d}"):
-                model = RandomForestRegressor(**params, n_jobs=-1)
-                model.fit(X_train, y_train)
+        with mlflow.start_run(run_name="Production_Best_Model"):
+            mlflow.log_params(prod_params)
 
-                y_pred = model.predict(X_test)
-                rmse = np.sqrt(mean_squared_error(y_test, y_pred))
-                mae = mean_absolute_error(y_test, y_pred)
+            model = RandomForestRegressor(**prod_params)
+            model.fit(X_train, y_train)
 
-                mlflow.log_params(params)
-                mlflow.log_metric("rmse", rmse)
-                mlflow.log_metric("mae", mae)
+            y_pred = model.predict(X_test)
+            rmse = np.sqrt(mean_squared_error(y_test, y_pred))
+            mae = mean_absolute_error(y_test, y_pred)
 
-                logger.info(
-                    f"Trial {i}/{NUM_TRIALS} | ROOT MSE: {rmse:.4f} | Params: {params}"
-                )
+            mlflow.log_metric("rmse", rmse)
+            mlflow.log_metric("mae", mae)
 
-                if rmse < best_rmse:
-                    best_rmse = rmse
-                    best_model = model
-                    best_params = params
-                    logger.info(f"🌟 NEW BEST MODEL FOUND! (ROOT MSE: {best_rmse:.4f})")
-                    # En iyi modeli etiketle
-                    mlflow.set_tag("candidate", "true")
+            logger.info(f"✅ MODEL TRAINED | RMSE: {rmse:.4f}")
 
-        # 4. SAVE THE BEST MODEL (ONNX Export)
-        if best_model:
-            logger.info(
-                f"📦 EXPORTING THE BEST MODEL (ROOT MSE: {best_rmse:.4f}) TO ONNX..."
-            )
+            # ---------------------------------------------------------
+            # 4. EXPORT TO ONNX
+            # ---------------------------------------------------------
+            logger.info(f"📦 EXPORTING ONNX MODEL...")
 
             initial_type = [("float_input", FloatTensorType([None, len(features)]))]
-            onnx_model = convert_sklearn(best_model, initial_types=initial_type)
+            onnx_model = convert_sklearn(model, initial_types=initial_type)
 
-            # Klasör kontrolü
             save_dir = os.path.dirname(MODEL_SAVE_PATH)
             if save_dir and not os.path.exists(save_dir):
                 os.makedirs(save_dir)
-                logger.info(f"📁 Created missing directory: {save_dir}")
 
             with open(MODEL_SAVE_PATH, "wb") as f:
                 f.write(onnx_model.SerializeToString())
 
-            logger.info(f"✅ BEST MODEL SAVED SUCCESSFULLY TO: {MODEL_SAVE_PATH}")
+            # Artifact Loglama
+            mlflow.log_artifact(MODEL_SAVE_PATH, artifact_path="onnx_model")
 
-            # Final kaydını MLflow'a işle
-            try:
-                with mlflow.start_run(run_name="Best_Model_Final"):
-                    mlflow.log_params(best_params)
-                    mlflow.log_metric("final_best_rmse", best_rmse)
+            size_mb = os.path.getsize(MODEL_SAVE_PATH) / (1024 * 1024)
+            logger.info(f"📉 FINAL MODEL SIZE: {size_mb:.2f} MB")
 
-                    # Modeli MLflow'a artifact olarak yükle (Opsiyonel ama önerilir)
-                    mlflow.sklearn.log_model(best_model, "best_random_forest_model")
+            if size_mb > 100:
+                logger.warning("⚠️ MODEL SIZE IS LARGE! This might cause OOM errors in Kubernetes.")
 
-                    # ONNX dosyasını da artifact olarak yükle
-                    mlflow.log_artifact(MODEL_SAVE_PATH, artifact_path="onnx_model")
-
-                    logger.info("🏆 BEST MODEL ARTIFACTS LOGGED.")
-            except Exception as ml_err:
-                logger.warning(
-                    f"⚠️ Model saved to disk but MLflow logging skipped: {ml_err}"
-                )
-
-        logger.info("🏁 TRAINING PIPELINE SUCCESSFULLY COMPLETED")
+        logger.info("🏁 TRAINING PIPELINE FINISHED")
 
     except Exception as e:
-        logger.error(f"❌ CRITICAL FAILURE IN PIPELINE EXECUTION: {e}")
+        logger.error(f"❌ FAILURE: {e}")
         raise e
 
 
