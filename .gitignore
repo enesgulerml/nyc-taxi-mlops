@@ -16,6 +16,7 @@ data/
 models/
 !models/.gitkeep
 mlflow_data/
+mlruns/
 
 # NOTEBOOK CHECKPOINTS
 .ipynb_checkpoints/
