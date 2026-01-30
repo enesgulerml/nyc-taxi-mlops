@@ -1,29 +1,56 @@
 # --- PYTHON & VENV ---
 __pycache__/
 *.pyc
+*.pyo
+*.pyd
 venv/
 .env
+.env.local
 
 # --- IDE SETTINGS ---
 .vscode/
 .idea/
 .DS_Store
+*.swp
 
-# --- DATA SCIENCE SPECIFIC ---
+# --- DATA SCIENCE & MLOPS ---
 data/
 !data/.gitkeep
 
+# Models and Big files
 models/
 !models/.gitkeep
+*.onnx
+*.pkl
+*.joblib
+
+# MLflow
 mlflow_data/
 mlruns/
+.trash/
 
-# NOTEBOOK CHECKPOINTS
-.ipynb_checkpoints/
+# --- DOCKER & INFRASTRUCTURE ---
+grafana_data/
+prometheus_data/
+redis_data/
+redis-data/
 
-# --- LOGS ---
+dump.rdb
+
+# --- TESTING & QUALITY ---
+.pytest_cache/
+.coverage
+htmlcov/
+.mypy_cache/
+
+# --- LOGS & SYSTEM ---
 logs/
 *.log
+npm-debug.log*
+__MACOSX/
+Thumbs.db
 
-# --- SYSTEM ---
-__MACOSX
+# --- TEMP / SCRATCHPAD ---
+temp/
+tmp/
+*.bak

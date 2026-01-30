@@ -1,44 +1,48 @@
-# Git
+# --- GIT & VERSION CONTROL ---
 .git
 .gitignore
+.dockerignore
 
-# Python Cache & Build Artifacts
+# --- PYTHON & VIRTUAL ENV ---
 __pycache__
 *.pyc
 *.pyo
 *.pyd
-.Python
-build
-develop-eggs
-dist
-downloads
-eggs
-.eggs
-lib
-lib64
-parts
-sdist
-var
-wheels
-*.egg-info
-.installed.cfg
-*.egg
-
-# Virtual Environment
 venv
 env
 .env
 .venv
+.eggs
+*.egg-info
+dist
+build
 
-# IDE Settings
-.vscode
-.idea
+# --- DATA & EXPERIMENTS ---
+data
 
-# Local Development Files
+mlruns
+mlflow_data
+
+notebooks
+*.ipynb
+
+# --- INFRASTRUCTURE & CONFIGS ---
+k8s
+
 docker-compose.yml
 Makefile
 README.md
-notebooks
 tests
+docs
+
+# --- IDE & SYSTEM ---
+.vscode
+.idea
+.DS_Store
+Thumbs.db
+
+# --- LOGS & TEMP ---
 logs
-data
+*.log
+*.bak
+dump.rdb
