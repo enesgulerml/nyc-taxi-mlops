@@ -1,5 +1,6 @@
 import os
 import pathlib
+
 import joblib
 import mlflow
 import mlflow.sklearn
@@ -13,7 +14,6 @@ from sklearn.model_selection import train_test_split
 
 from src.components.data_ingestion import load_and_clean_data
 from src.components.feature_engineering import create_features
-
 # Project Modules
 from src.config import DATA_RAW_PATH, MLFLOW_EXPERIMENT_NAME, MODEL_SAVE_PATH
 from src.utils.logger import get_logger
@@ -37,7 +37,9 @@ def run_training():
         if not tracking_uri:
             mlruns_path = pathlib.Path("./mlruns").resolve()
             tracking_uri = mlruns_path.as_uri()
-            logger.warning(f"⚠️ No MLFLOW_TRACKING_URI found. Using Local File Store: {tracking_uri}")
+            logger.warning(
+                f"⚠️ No MLFLOW_TRACKING_URI found. Using Local File Store: {tracking_uri}"
+            )
         else:
             logger.info(f"📡 Connecting to MLflow Server at: {tracking_uri}")
 
@@ -60,11 +62,12 @@ def run_training():
 
         # Velocity Filter
         df_processed["avg_speed_kph"] = (
-                                                df_processed["distance_haversine"] / df_processed["trip_duration"]
-                                        ) * 3600
+            df_processed["distance_haversine"] / df_processed["trip_duration"]
+        ) * 3600
         df_processed = df_processed[
-            (df_processed["avg_speed_kph"] <= 100) & (df_processed["avg_speed_kph"] >= 0.1)
-            ]
+            (df_processed["avg_speed_kph"] <= 100)
+            & (df_processed["avg_speed_kph"] >= 0.1)
+        ]
 
         df_processed["trip_duration_log"] = np.log1p(df_processed["trip_duration"])
 
@@ -102,7 +105,7 @@ def run_training():
             "min_samples_split": 5,
             "min_samples_leaf": 3,
             "random_state": 42,
-            "n_jobs": -1
+            "n_jobs": -1,
         }
 
         logger.info(f"🏭 STARTING TRAINING WITH PRODUCTION PARAMS: {prod_params}")
@@ -144,7 +147,9 @@ def run_training():
             logger.info(f"📉 FINAL MODEL SIZE: {size_mb:.2f} MB")
 
             if size_mb > 100:
-                logger.warning("⚠️ MODEL SIZE IS LARGE! This might cause OOM errors in Kubernetes.")
+                logger.warning(
+                    "⚠️ MODEL SIZE IS LARGE! This might cause OOM errors in Kubernetes."
+                )
 
         logger.info("🏁 TRAINING PIPELINE FINISHED")
 

@@ -1,14 +1,16 @@
 import os
 import zipfile
-import pandas as pd
+
 import gdown
+import pandas as pd
+
 from src.config import NYC_BOUNDS
 from src.utils.logger import get_logger
 
 logger = get_logger(__name__)
 
 # --- GOOGLE DRIVE SETTINGS ---
-DRIVE_FILE_ID = '1bC2VJsYYQdDOUKMdu4W6YPP0NPgQqBbc'
+DRIVE_FILE_ID = "1bC2VJsYYQdDOUKMdu4W6YPP0NPgQqBbc"
 
 
 def check_and_download_data(filepath: str):
@@ -20,7 +22,9 @@ def check_and_download_data(filepath: str):
         logger.info(f"✅ DATA FOUND AT: {filepath}")
         return
 
-    logger.info(f"⬇️ DATA NOT FOUND. DOWNLOADING FROM GOOGLE DRIVE (ID: {DRIVE_FILE_ID})...")
+    logger.info(
+        f"⬇️ DATA NOT FOUND. DOWNLOADING FROM GOOGLE DRIVE (ID: {DRIVE_FILE_ID})..."
+    )
 
     directory = os.path.dirname(filepath)
     if not os.path.exists(directory):
@@ -28,7 +32,7 @@ def check_and_download_data(filepath: str):
         logger.info(f"📁 Created directory: {directory}")
 
     zip_path = os.path.join(directory, "temp_data.zip")
-    url = f'https://drive.google.com/uc?id={DRIVE_FILE_ID}'
+    url = f"https://drive.google.com/uc?id={DRIVE_FILE_ID}"
 
     try:
         # 1. DOWNLOAD
@@ -37,12 +41,14 @@ def check_and_download_data(filepath: str):
         # 2. EXTRACTING
         if os.path.exists(zip_path):
             logger.info("📦 EXTRACTING ZIP FILE...")
-            with zipfile.ZipFile(zip_path, 'r') as zip_ref:
+            with zipfile.ZipFile(zip_path, "r") as zip_ref:
                 zip_ref.extractall(directory)
 
             # 3. CLEANING
             os.remove(zip_path)
-            logger.info(f"✅ DOWNLOAD & EXTRACTION COMPLETE. File is ready at: {filepath}")
+            logger.info(
+                f"✅ DOWNLOAD & EXTRACTION COMPLETE. File is ready at: {filepath}"
+            )
         else:
             raise FileNotFoundError("Downloaded zip file could not be found.")
 
@@ -78,7 +84,7 @@ def load_and_clean_data(filepath: str) -> pd.DataFrame:
         & (df["dropoff_longitude"] <= NYC_BOUNDS["max_lng"])
         & (df["dropoff_latitude"] >= NYC_BOUNDS["min_lat"])
         & (df["dropoff_latitude"] <= NYC_BOUNDS["max_lat"])
-        ]
+    ]
 
     logger.info(
         f"THE CLEANUP IS COMPLETE. THE REMAINING LINES ARE {original_len} -> {len(df)}"
