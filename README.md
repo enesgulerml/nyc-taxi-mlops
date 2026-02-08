@@ -111,7 +111,7 @@ Since the Docker image requires a pre-trained model file to be present, you **mu
     make train
 ```
 
-![Streamlit Using Example](docs/images/Streamlit_Usage.gif)
+![Streamlit Using Example](docs/images/ui/Streamlit_Usage.gif)
 
 ### Option 1: Docker Compose (Recommended for Testing)
 Run the entire stack (API + UI + Redis) with a single command:
@@ -165,7 +165,7 @@ To validate the efficiency of the inference pipeline, we implemented a real-time
 The primary goal was to measure the impact of the **Redis Caching Layer** on response times under load.
 
 <div align="center">
-  <img src="docs/images/Performance.png" alt="Performance Metrics" width="800">
+  <img src="docs/images/redis/Performance.png" alt="Performance Metrics" width="800">
   <p><em>Figure: Real-time latency comparison (Redis vs Model)</em></p>
 </div>
 
@@ -180,7 +180,30 @@ As demonstrated in the Grafana dashboard above, the integration of Redis provide
 * **Efficiency:** This architecture significantly reduces the computational load on the ML model, allowing for scalable deployment.
 
 
+### 🚀 Locust Load Test
+To validate the system's stability under heavy concurrency, a sustained load test was performed using **Locust**. The goal was to simulate real-world traffic with a high number of concurrent users.
 
+<div align="center">
+  <img src="docs/images/locust/load_test_results.png" alt="Locust Load Test Results" width="800">
+  <p><em>Figure: System stability under 1000 concurrent users (~81 RPS)</em></p>
+</div>
+
+* **Tool:** Locust
+* **Scenario:** Heavy Concurrent Load
+* **Simulated Users:** **1,000 Concurrent Users** (High Load)
+* **Status:** Running (Sustained)
+
+#### 📊 Benchmark Results
+Despite the high concurrency on a local environment, the system maintained **100% availability** with zero failures.
+
+| Metric | Result | Insight |
+| :--- | :--- | :--- |
+| **Active Users** | **1,000** | Massive parallel user simulation |
+| **Throughput** | **~81 req/sec** | ~4,860 requests per minute |
+| **Failure Rate** | **0%** | **Zero crashes or dropped connections** |
+| **Avg. Latency** | **~6,995 ms** | High due to local hardware limits, but stable |
+
+> **Key Takeaway:** The system successfully managed 1,000 simultaneous connections without crashing. While the latency increased due to resource constraints (CPU/RAM) on the local test machine, the **zero-failure rate** proves the robustness of the architecture.
 ---
 ## 🧪 Testing & Quality Assurance
 To ensure the reliability and robustness of the Machine Learning pipeline, this project maintains a suite of automated unit tests.
@@ -246,12 +269,12 @@ After analyzing 50 candidates, **Trial_34** was selected as the production model
 The **Parallel Coordinates Plot** below visualizes the relationship between hyperparameters and model error (RMSE).
 > **Insight:** There is a clear correlation between higher `max_depth` (17-19) and lower RMSE (indicated by the blue lines). Shallower trees consistently underperformed.
 
-![MLflow Parallel Coordinates](docs/images/MLflow_2.png)
+![MLflow Parallel Coordinates](docs/images/mlflow/MLflow_2.png)
 
 #### 2. Leaderboard Snapshot
 A comparison of the top performing runs sorted by RMSE. The champion model (Trial_34) demonstrated superior consistency compared to other candidates.
 
-![MLflow Leaderboard](docs/images/MLflow.png)
+![MLflow Leaderboard](docs/images/mlflow/MLflow.png)
 
 ### 📉 Model Performance & Optimization
 The model architecture was optimized for **Kubernetes deployment**, prioritizing low latency and memory efficiency over marginal accuracy gains.
