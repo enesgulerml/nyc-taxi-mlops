@@ -5,8 +5,19 @@ import numpy as np
 import onnxruntime as ort
 import pytest
 
-PROJECT_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
+PROJECT_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", ".."))
 MODEL_PATH = os.path.join(PROJECT_ROOT, "models", "nyc_taxi_model.onnx")
+
+
+@pytest.fixture(scope="module")
+def shared_session():
+    if not os.path.exists(MODEL_PATH):
+        pytest.fail(f"Model file not found! Path: {MODEL_PATH}")
+    try:
+        session = ort.InferenceSession(MODEL_PATH)
+        return session
+    except Exception as e:
+        pytest.fail(f"Model failed to load during setup: {str(e)}")
 
 
 class TestModelArtifact:
@@ -18,60 +29,48 @@ class TestModelArtifact:
     def test_model_file_exists(self):
         """
         Test: Does the model file physically exist on the disk?
+        Checking path is cheap, so we can keep this separate or rely on fixture.
         """
         assert os.path.exists(MODEL_PATH), f"Model file not found! Path: {MODEL_PATH}"
 
-    def test_model_loading(self):
+    def test_model_loading(self, shared_session):
         """
         Test: Can the ONNX Runtime load the model without errors?
+        We use the fixture here. If fixture worked, session is not None.
         """
-        try:
-            session = ort.InferenceSession(MODEL_PATH)
-            assert session is not None
-        except Exception as e:
-            pytest.fail(f"An error occurred while loading the model: {str(e)}")
+        assert shared_session is not None, "Model session could not be created."
 
-    def test_model_metadata(self):
+    def test_model_metadata(self, shared_session):
         """
         Test: Are the model's input and output definitions correct?
         """
-        session = ort.InferenceSession(MODEL_PATH)
 
         # Input Control
-        inputs = session.get_inputs()
+        inputs = shared_session.get_inputs()
         assert len(inputs) > 0, "The model has no input layer!"
 
         # Output Control
-        outputs = session.get_outputs()
+        outputs = shared_session.get_outputs()
         assert len(outputs) > 0, "The model has no output layer!"
 
-    def test_prediction_flow(self):
+    def test_prediction_flow(self, shared_session):
         """
         Test: Does the model generate predictions when fed with random (dummy) data?
         """
-        session = ort.InferenceSession(MODEL_PATH)
-
-        # We dynamically retrieve the input name and shape that the model expects.
-        input_meta = session.get_inputs()[0]
+        input_meta = shared_session.get_inputs()[0]
         input_name = input_meta.name
         input_shape = input_meta.shape
 
-        # Shape usually returns [None, N_Features]. We replace None with 1 (batch size).
-        # We get N_Features dynamically (e.g., 6, 8, 10, whatever).
         n_features = input_shape[1]
 
-        # Generate random float data (1 row, N features)
         dummy_input = np.random.rand(1, n_features).astype(np.float32)
 
-        # Predict
         try:
-            result = session.run(None, {input_name: dummy_input})
+            result = shared_session.run(None, {input_name: dummy_input})
 
-            # Result Check
             prediction = result[0]
             assert len(prediction) > 0, "The guess result came back empty."
 
-            # Is the returned value a number?
             assert isinstance(
                 prediction[0][0], (np.floating, float)
             ), "The model did not return a numerical value"
