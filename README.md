@@ -1,4 +1,4 @@
-# 🚖 NYC Taxi Duration Prediction (End-to-End MLOps)
+# NYC Taxi Duration Prediction (End-to-End MLOps)
 [![Docker](https://img.shields.io/badge/Docker-2496ED?style=for-the-badge&logo=docker&logoColor=white)](https://www.docker.com/)
 [![Kubernetes](https://img.shields.io/badge/Kubernetes-326CE5?style=for-the-badge&logo=kubernetes&logoColor=white)](https://kubernetes.io/)
 [![FastAPI](https://img.shields.io/badge/FastAPI-005571?style=for-the-badge&logo=fastapi)](https://fastapi.tiangolo.com/)
@@ -23,7 +23,7 @@ The system follows a decoupled **Microservices Architecture:**
 
 ---
 ## 🚀 Key Technical Highlights
-### 1. 📉 Docker Image Optimization (2.05GB → 650MB)
+### 1. Docker Image Optimization (2.05GB → 650MB)
 **Problem:** The initial monolithic image was ~2GB due to heavy libraries (Scikit-learn, XGBoost, Pandas) used for training.
 * **Solution:**
   * **Decoupling:** Separated API and UI into distinct Docker images.
@@ -31,12 +31,12 @@ The system follows a decoupled **Microservices Architecture:**
   * **Multi-Stage Builds:** Used Docker multi-stage builds to exclude build tools and cache files from the final runtime image.
   * **Context Optimization:** Implemented strict .dockerignore rules (excluding venv, models, git).
 
-### 2. 🛡️ Kubernetes Security & Hardening
+### 2. Kubernetes Security & Hardening
 * **Non-Root User:** Containers run as a dedicated non-root user (appuser UID: 1000) instead of default root, following security best practices.
 * **Security Context:** Configured Kubernetes securityContext (fsGroup: 1000) to manage volume permissions securely, preventing "Permission Denied" errors on log volumes.
 * **Volume Management:** Used emptyDir volumes for temporary log storage in a read-only container environment.
 
-### 3. ⚡ Performance Engineering
+### 3. Performance Engineering
 * **ONNX Format:** Trained Random Forest model is converted to .onnx format, reducing the dependency footprint and improving inference speed.
 * **Redis Caching:** Implemented a caching mechanism in FastAPI. Identical requests are served from Redis (Memory) instead of re-running the model.
 * **Lifespan Events:** Model loading and Redis connection happen only once during application startup (using FastAPI lifespan), preventing I/O overhead on every request.
@@ -73,8 +73,8 @@ The system follows a decoupled **Microservices Architecture:**
 ### 1. Clone the Repository
 Start by cloning the project to your local machine:
 ```bash
-git clone https://github.com/enesgulerml/nyc-taxi-mlops.git
-cd nyc-taxi-mlops
+    git clone https://github.com/enesgulerml/nyc-taxi-mlops.git
+    cd nyc-taxi-mlops
 ```
 ### 2. Data Ingestion (Zero-Touch)
 This project utilizes an automated data ingestion pipeline. You **do not** need to manually download datasets from Kaggle.
@@ -86,7 +86,7 @@ The `make train` (or `make start-all-k8s`) command automatically:
 
 **Just run:**
 ```bash
-make train
+    make train
 ```
 
 ---
@@ -106,9 +106,6 @@ Since the Docker image requires a pre-trained model file to be present, you **mu
     source venv/bin/activate
     
     make install
-    
-    # 2. Train the model (This saves the model to 'models/' directory)
-    make train
 ```
 
 ![Streamlit Using Example](docs/images/ui/Streamlit_Usage.gif)
@@ -169,18 +166,18 @@ The primary goal was to measure the impact of the **Redis Caching Layer** on res
   <p><em>Figure: Real-time latency comparison (Redis vs Model)</em></p>
 </div>
 
-### 🚀 Key Results: The "Redis Effect"
+### Key Results: The "Redis Effect"
 As demonstrated in the Grafana dashboard above, the integration of Redis provided a massive performance boost:
-* **🐢 Model Inference (Cache Miss):** When the request is processed by the model for the first time, the average latency is **~281 ms**.
-* **⚡ Redis Cache (Cache Hit):** When the same request is repeated, the system serves the prediction from memory in just **~3.32 ms**.
+* **Model Inference (Cache Miss):** When the request is processed by the model for the first time, the average latency is **~281 ms**.
+* **Redis Cache (Cache Hit):** When the same request is repeated, the system serves the prediction from memory in just **~3.32 ms**.
 
-### 📉 Impact Analysis
+### Impact Analysis
 * **Speedup:** The system is approximately **85x faster** on cache hits.
 * **Throughput:** The API successfully handled traffic spikes (up to **180 RPS**) while maintaining low latency for cached requests.
 * **Efficiency:** This architecture significantly reduces the computational load on the ML model, allowing for scalable deployment.
 
 
-### 🚀 Locust Load Test
+### Locust Load Test
 To validate the system's stability under heavy concurrency, a sustained load test was performed using **Locust**. The goal was to simulate real-world traffic with a high number of concurrent users.
 
 <div align="center">
@@ -193,7 +190,7 @@ To validate the system's stability under heavy concurrency, a sustained load tes
 * **Simulated Users:** **1,000 Concurrent Users** (High Load)
 * **Status:** Running (Sustained)
 
-#### 📊 Benchmark Results
+#### Benchmark Results
 Despite the high concurrency on a local environment, the system maintained **100% availability** with zero failures.
 
 | Metric | Result | Insight |
@@ -209,14 +206,14 @@ Despite the high concurrency on a local environment, the system maintained **100
 To ensure the reliability and robustness of the Machine Learning pipeline, this project maintains a suite of automated unit tests.
 We use **pytest** as our primary testing framework to validate data processing logic, feature engineering, and model training components.
 
-### 🚀 How to Run Tests
+### How to Run Tests
 You can execute the full test suite using the provided **Makefile** command.
 This will run all tests located in the tests/ directory within the configured virtual environment.
 ```bash
     make test
 ```
 
-### 🔍 Scope of Tests
+### Scope of Tests
 The testing strategy focuses on the following key areas:
 * **Data Validation:** Ensures that raw data is correctly loaded, cleaned, and adheres to the expected schema (e.g., removing outliers, handling missing values).
 * **Feature Engineering:** Verifies the mathematical correctness of transformation functions (e.g., Haversine distance calculation, time conversions).
@@ -228,15 +225,15 @@ Note: Tests are designed to be fast and lightweight, allowing for quick feedback
 ## ☁️ Cloud Deployment & Infrastructure (AWS Proof)
 The entire system is deployed on **AWS EC2 (eu-central-1)**, utilizing a secure VPC configuration. Below are the evidences of the live infrastructure and network security settings.
 
-### 1. 🟢 Live Application (Streamlit on EC2)
+### 1. Live Application (Streamlit on EC2)
 The application is accessible via the Public IPv4 address of the EC2 instance on port `8501`.
 ![AWS Live App](docs/images/aws/aws-1.png)
 
-### 2. 🖥️ Compute Infrastructure
+### 2. Compute Infrastructure
 The microservices are hosted on a **t3.micro** instance running Ubuntu Server. The instance is monitored and managed via AWS Console.
 ![AWS EC2 Instance](docs/images/aws/aws-2.png)
 
-### 3. 🛡️ Network Security & Port Configuration
+### 3. Network Security & Port Configuration
 Custom **Security Groups** were configured to enforce the principle of least privilege, opening only necessary ports for the microservices:
 * **Port 22 (SSH):** Remote management (restricted access).
 * **Port 8000 (TCP):** FastAPI Backend access.
@@ -253,7 +250,7 @@ To achieve the best predictive performance, I implemented an automated training 
 * **Total Trials:** 50+ Iterations
 * **Optimization Strategy:** Random Search (Simulated)
 
-### 🏆 Champion Model Selection
+### Champion Model Selection
 After analyzing 50 candidates, **Trial_34** was selected as the production model based on the lowest RMSE score on the validation set.
 
 | Parameter | Value | Description |
@@ -263,7 +260,7 @@ After analyzing 50 candidates, **Trial_34** was selected as the production model
 | **min_samples_split** | `2` | Allowed for detailed splitting at nodes. |
 | **min_samples_leaf** | `1` | High variance capture (balanced by ensemble). |
 
-### 📊 Performance Visualization
+### Performance Visualization
 
 #### 1. Hyperparameter Impact Analysis
 The **Parallel Coordinates Plot** below visualizes the relationship between hyperparameters and model error (RMSE).
@@ -276,7 +273,7 @@ A comparison of the top performing runs sorted by RMSE. The champion model (Tria
 
 ![MLflow Leaderboard](docs/images/mlflow/MLflow.png)
 
-### 📉 Model Performance & Optimization
+### Model Performance & Optimization
 The model architecture was optimized for **Kubernetes deployment**, prioritizing low latency and memory efficiency over marginal accuracy gains.
 
 **Optimization Results:**
