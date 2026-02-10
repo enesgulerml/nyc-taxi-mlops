@@ -85,18 +85,8 @@ The `make train` (or `make start-all-k8s`) command automatically:
 3.  Validates and processes the data for training.
 
 **Just run:**
-```bash
-    make train
-```
-
----
-## 🛠️ Installation & Usage
-
-### Prerequisite: Generate the Model
-Since the Docker image requires a pre-trained model file to be present, you **must** run the training pipeline locally first.
 
 ```bash
-    # 1. Setup virtual environment & dependencies
     # === For Windows ===
     python -m venv venv
     .\venv\Scripts\Activate
@@ -106,7 +96,11 @@ Since the Docker image requires a pre-trained model file to be present, you **mu
     source venv/bin/activate
     
     make install
+    make train
 ```
+
+---
+## 🛠️ Installation & Usage
 
 ![Streamlit Using Example](docs/images/ui/Streamlit_Usage.gif)
 
@@ -287,4 +281,4 @@ The model architecture was optimized for **Kubernetes deployment**, prioritizing
 
 ---
 ## 👨‍💻 Author
-Enes Guler - Junior MLOps Engineer
+Enes Guler - MLOps Engineer
